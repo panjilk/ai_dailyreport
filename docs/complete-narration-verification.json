@@ -1,0 +1,23 @@
+{
+  "artifact": "outputs\\2026-09-12-complete-fast\\daily.mp4",
+  "duration_seconds": 273.708,
+  "speech_rate_percent": 20,
+  "stories": 6,
+  "points": 23,
+  "pages": 14,
+  "speech_units": 31,
+  "subtitle_cues": 63,
+  "checks": {
+    "canonical_transcript_and_page_coverage": "passed",
+    "word_boundary_coverage_all_units": "passed",
+    "audio_and_last_subtitle_tail": "passed",
+    "full_ffmpeg_decode": "passed",
+    "visual_review_continuation_and_last_story": "passed",
+    "independent_render_review": "no blocking findings",
+    "automatic_summary_stored_sources": "passed; complete selected sentences, no ellipses"
+  },
+  "tests": {
+    "passed": 47,
+    "subtests_passed": 14
+  }
+}

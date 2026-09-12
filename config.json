@@ -1,5 +1,7 @@
 {
   "voice": "zh-CN-XiaoxiaoNeural",
+  "speech_rate": 20,
+  "topic_scope": "foundation_models",
   "sources": [
     {
       "name": "IT之家",

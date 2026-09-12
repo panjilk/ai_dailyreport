@@ -1,0 +1,30 @@
+{
+  "verified_on": "2026-09-12",
+  "tests": "32 passed, 10 subtests passed",
+  "editions": [
+    {
+      "path": "outputs\\2026-09-11-release\\daily.mp4",
+      "duration_seconds": 225.833,
+      "dimensions": "1920x1080",
+      "video": "H.264 24fps",
+      "audio": "AAC 48kHz mono",
+      "speech_engine": "Edge TTS / zh-CN-XiaoxiaoNeural",
+      "full_decode_exit": 0,
+      "subtitle_segments": 44,
+      "size_MiB": 5.53
+    },
+    {
+      "path": "outputs\\2026-09-12_101924_774524\\daily.mp4",
+      "duration_seconds": 232.333,
+      "dimensions": "1920x1080",
+      "video": "H.264 24fps",
+      "audio": "AAC 48kHz mono",
+      "speech_engine": "Edge TTS / zh-CN-XiaoxiaoNeural",
+      "full_decode_exit": 0,
+      "subtitle_segments": 47,
+      "size_MiB": 6.1
+    }
+  ],
+  "review": "Prior P1 issues resolved in independent review",
+  "one_click_command": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File run.ps1 -Limit 6 -Tts edge"
+}

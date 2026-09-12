@@ -1,8 +1,9 @@
 param(
     [string]$InputFile,
-    [int]$Hours = 24,
+    [ValidateRange(1,48)][int]$Hours = 48,
     [int]$Limit = 8,
     [ValidateSet('auto','edge','sapi')][string]$Tts = 'auto',
+    [Nullable[int]]$Rate,
     [switch]$CollectOnly,
     [switch]$Open
 )
@@ -23,6 +24,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 $cliArgs = @('-m','dailyreport','--hours',"$Hours",'--limit',"$Limit",'--tts',$Tts)
 if ($InputFile) { $cliArgs += @('--input',$InputFile) }
+if ($null -ne $Rate) { $cliArgs += @('--rate',"$Rate") }
 if ($CollectOnly) { $cliArgs += '--collect-only' }
 if ($Open) { $cliArgs += '--open' }
 & $pythonPath @cliArgs

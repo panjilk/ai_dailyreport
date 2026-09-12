@@ -1,0 +1,11 @@
+{
+  "duration_seconds": 56.792,
+  "stories": 1,
+  "event_date": "2026-09-11",
+  "strict_recency": "passed",
+  "complete_transcript_and_single_page": "passed",
+  "full_audio_video_decode": "passed",
+  "speech_units": 6,
+  "tests": 62,
+  "subtests": 14
+}

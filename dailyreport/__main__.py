@@ -10,7 +10,8 @@ from pathlib import Path
 import sys
 
 from .collect import collect
-from .render import CATEGORIES, render, validate_briefing, window_label
+from .recency import enforce_recency
+from .render import CATEGORIES, prepare_briefing, render, validate_briefing, window_label
 
 ROOT = Path(__file__).resolve().parent.parent
 SHANGHAI = timezone(timedelta(hours=8))
@@ -27,6 +28,8 @@ def export_text(briefing, output):
                f"来源：[{story['source_name']}]({story['source_url']})", '',
                '**口播**', '', story['narration'], '']
         script += [f"{i:02} {story['title']}", story['narration'], '']
+        for source in story.get('supporting_sources', []):
+            md += [f"补充证据：[{source['name']}]({source['url']})", '']
     if briefing.get('collection_errors'):
         md += ['## 采集记录', '', *['- ' + x for x in briefing['collection_errors']], '']
     (output / 'report.md').write_text('\n'.join(md), encoding='utf-8')
@@ -40,9 +43,10 @@ def write_preview(briefing, output):
     cards = []
     for i, story in enumerate(briefing['stories'], 1):
         bullets = ''.join(f'<li>{escape(x)}</li>' for x in story['bullets'])
+        evidence_links = ''.join(f' · <a href="{escape(x["url"], quote=True)}" target="_blank" rel="noopener noreferrer">{escape(x["name"])} ↗</a>' for x in story.get('supporting_sources', []))
         cards.append(f'''<article><small>{i:02} / {escape(story['category'])}</small>
         <h2>{escape(story['title'])}</h2><ul>{bullets}</ul>
-        <footer>{escape(story['published'][:10])} · <a href="{escape(story['source_url'], quote=True)}" target="_blank" rel="noopener noreferrer">{escape(story['source_name'])} ↗</a></footer></article>''')
+        <footer>{escape(story['published'][:10])} · <a href="{escape(story['source_url'], quote=True)}" target="_blank" rel="noopener noreferrer">{escape(story['source_name'])} ↗</a>{evidence_links}</footer></article>''')
     player = ''
     if playable:
         chapters = ''.join(f'<button data-time="{float(c["start"]):.3f}">{escape(c["title"])}</button>' for c in manifest.get('chapters', []))
@@ -78,16 +82,19 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description='一键采集 AI 新闻，生成中文配音日报视频。')
     parser.add_argument('--input', type=Path, help='使用已准备的 briefing JSON，跳过联网采集')
     parser.add_argument('--config', type=Path, default=ROOT / 'config.json')
-    parser.add_argument('--hours', type=int, default=24, help='新闻时间窗口，默认24小时')
+    parser.add_argument('--hours', type=int, default=48, help='最多回看48小时，且绝不早于北京时间昨天零点')
     parser.add_argument('--limit', type=int, default=8, help='最多收录条数，1至12')
     parser.add_argument('--output', type=Path, help='输出目录，默认按运行时间新建')
     parser.add_argument('--collect-only', action='store_true', help='仅采集文字，不制作视频')
     parser.add_argument('--tts', choices=['auto', 'edge', 'sapi'], default='auto')
     parser.add_argument('--voice', help='联网语音，例如 zh-CN-XiaoxiaoNeural')
+    parser.add_argument('--rate', type=int, help='语速百分比，默认+20；支持-10至60')
     parser.add_argument('--open', action='store_true', help='完成后打开本地预览页')
     args = parser.parse_args(argv)
-    if not 1 <= args.limit <= 12 or not 1 <= args.hours <= 168:
-        parser.error('--limit 必须在1至12之间，--hours 必须在1至168之间。')
+    if not 1 <= args.limit <= 12 or not 1 <= args.hours <= 48:
+        parser.error('--limit 必须在1至12之间，--hours 必须在1至48之间。')
+    if args.rate is not None and not -10 <= args.rate <= 60:
+        parser.error('--rate 必须在-10至60之间。')
     try:
         now = datetime.now(SHANGHAI)
         config = json.loads(args.config.read_text(encoding='utf-8-sig'))
@@ -97,14 +104,16 @@ def main(argv=None):
         else:
             print(f'正在采集最近 {args.hours} 小时的 AI 新闻……', flush=True)
             briefing = collect(config, now, args.hours, args.limit)
+        briefing = prepare_briefing(briefing)
         validate_briefing(briefing)
-        briefing['stories'].sort(key=lambda s: CATEGORIES.index(s['category']))
+        enforce_recency(briefing, now)
         output = (args.output or ROOT / 'outputs' / now.strftime('%Y-%m-%d_%H%M%S_%f')).resolve()
         if (output / 'daily.mp4').exists() or (output / 'briefing.json').exists():
             raise ValueError('该目录已有日报，请指定新的 --output，避免覆盖已有成片或文字稿。')
         export_text(briefing, output)
         if not args.collect_only:
-            render(briefing, output, args.voice or config.get('voice', 'zh-CN-XiaoxiaoNeural'), args.tts)
+            render(briefing, output, args.voice or config.get('voice', 'zh-CN-XiaoxiaoNeural'), args.tts,
+                   args.rate if args.rate is not None else config.get('speech_rate', 20))
         write_preview(briefing, output)
         print(f'完成：{output / "index.html"}', flush=True)
         if args.open and os.name == 'nt':

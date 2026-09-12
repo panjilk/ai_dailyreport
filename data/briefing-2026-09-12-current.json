@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-12",
+  "window_days": 2,
+  "title": "大模型更新 · 2026-09-12",
+  "edition_note": "仅限北京时间2026年9月11日至9月12日16:19新发生的模型更新或新发布评测；本次核实收录1条9月11日模型更新，未纳入9月12日条目，不以旧闻转载或动态榜单补数；published与event_date均按已核实日期保留日级精度。",
+  "stories": [
+    {
+      "title": "Kimi K2.8预览版升级编程与推理",
+      "source_name": "Kimi 官方发布记录",
+      "source_url": "https://www.kimi.com/code/docs/kimi-code/whats-new.html",
+      "published": "2026-09-11",
+      "event_date": "2026-09-11",
+      "id": "dafed79ee3c5178c",
+      "category": "模型发布",
+      "nav_label": "Kimi",
+      "bullets": [
+        "月之暗面于9月11日将Kimi K2.8预览版全量上线Kimi Code，原有模型标识保持不变，官方称编码和智能体能力提升，思考效率较K2.7 Code改善。",
+        "新版支持最高百万词元上下文，可选择低、高、最高三档思考强度，默认采用最高档，官方将其综合性能描述为接近K3，适用于代码补全和常规开发。",
+        "这些效果判断来自厂商说明，发布记录未给出量化对比成绩或独立复测，不能据此认定全面追平K3，关闭思考后的请求则由K2.8无思考版本处理。"
+      ],
+      "narration": "Kimi K2.8预览版升级编程与推理。月之暗面于9月11日将Kimi K2.8预览版全量上线Kimi Code，原有模型标识保持不变，官方称编码和智能体能力提升，思考效率较K2.7 Code改善。新版支持最高百万词元上下文，可选择低、高、最高三档思考强度，默认采用最高档，官方将其综合性能描述为接近K3，适用于代码补全和常规开发。这些效果判断来自厂商说明，发布记录未给出量化对比成绩或独立复测，不能据此认定全面追平K3，关闭思考后的请求则由K2.8无思考版本处理。",
+      "evidence": "月之暗面于9月11日将Kimi K2.8预览版全量上线Kimi Code，原有模型标识保持不变，官方称编码和智能体能力提升，思考效率较K2.7 Code改善。新版支持最高百万词元上下文，可选择低、高、最高三档思考强度，默认采用最高档，官方将其综合性能描述为接近K3，适用于代码补全和常规开发。这些效果判断来自厂商说明，发布记录未给出量化对比成绩或独立复测，不能据此认定全面追平K3，关闭思考后的请求则由K2.8无思考版本处理。",
+      "verification": "official_dated_release_reviewed_vendor_claims",
+      "supporting_sources": [
+        {
+          "name": "Kimi 官方模型配置说明",
+          "url": "https://www.kimi.com/code/docs/kimi-code/models.html"
+        },
+        {
+          "name": "IT之家当日报道：2026-09-11 16:00:46",
+          "url": "https://www.ithome.com/1/001/319.htm"
+        }
+      ]
+    }
+  ],
+  "collection_errors": [],
+  "summary_mode": "editorial_complete",
+  "date_range": {
+    "start": "2026-09-11",
+    "end": "2026-09-12",
+    "timezone": "Asia/Shanghai"
+  },
+  "as_of": "2026-09-12T16:19:00+08:00"
+}
