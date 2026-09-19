@@ -98,7 +98,7 @@ class CollectionTests(unittest.TestCase):
         self.assertEqual(narration, '中文模型训练方法。' + ''.join(bullets))
 
     @patch('dailyreport.collect._fetch')
-    def test_general_feed_rejects_tangential_hardware_ai_mentions(self, fetch):
+    def test_all_ai_includes_hardware_and_policy_with_ai_descriptions(self, fetch):
         rows = [
             ('石头 G30S Ultra 体验：41000Pa、75℃ 活水与 8.98cm 机身，年度旗舰答卷', '新增 AI 自升降滚筒罩和 AI 智控清洁液。'),
             ('全新一代智己 LS6 将于 9 月 23 日上市，预售价 20.99 万元起', '车型提供多种电池配置，支持 AI 智能驾驶。'),
@@ -110,8 +110,8 @@ class CollectionTests(unittest.TestCase):
         feed = '<rss><channel>' + entries + '</channel></rss>'
         fetch.side_effect = lambda url: feed if url.endswith('rss') else '<article><p>' + TEXT + '</p></article>'
         result = collect({'topic_scope': 'all_ai', 'sources': [{'name': '综合新闻', 'url': 'https://example.com/rss'}]}, NOW, 24, 8)
-        self.assertEqual([s['title'] for s in result['stories']], [row[0] for row in rows[3:]])
-        self.assertEqual(fetch.call_count, 3)
+        self.assertEqual([s['title'] for s in result['stories']], [row[0] for row in rows])
+        self.assertEqual(fetch.call_count, 6)
 
     def test_safety_related_link_not_article_evidence(self):
         related = 'AI 智能体出现失控行为，OpenAI 呼吁美国出台强制性全国 AI 安全法规'
@@ -345,7 +345,7 @@ class CollectionTests(unittest.TestCase):
                 raise OSError('article timeout')
             return '<article><p>' + TEXT + '</p></article>'
         fetch.side_effect = response
-        result = collect({'topic_scope': 'all_ai', 'sources': [{'name': 'test', 'url': 'https://example.com/rss'}]}, NOW, 24, 100)
+        result = collect({'article_request_budget': 20, 'topic_scope': 'all_ai', 'sources': [{'name': 'test', 'url': 'https://example.com/rss'}]}, NOW, 24, 100)
         self.assertEqual(len(result['stories']), 19)
         self.assertEqual(len(result['collection_errors']), 1)
         self.assertEqual(fetch.call_count, 21)
@@ -360,10 +360,10 @@ class CollectionTests(unittest.TestCase):
         fetch.side_effect = response
         config = {'topic_scope': 'all_ai', 'sources': [{'name': '坏源', 'url': 'https://example.com/bad', 'enabled': True, 'ai_only': False}, {'name': '新闻', 'url': 'https://example.com/rss', 'enabled': True, 'ai_only': False}]}
         result = collect(config, NOW, 24, 8)
-        self.assertEqual(set(result), {'date', 'window_days', 'title', 'edition_note', 'stories', 'collection_errors'})
+        self.assertEqual(set(result), {'date', 'window_days', 'title', 'edition_note', 'stories', 'collection_errors', 'collection_stats'})
         self.assertEqual(result['date'], '2026-09-11')
         story = result['stories'][0]
-        self.assertEqual(set(story), {'id', 'category', 'title', 'bullets', 'narration', 'source_name', 'source_url', 'published', 'evidence', 'verification', 'source_text', 'nav_label', 'event_date'})
+        self.assertEqual(set(story), {'id', 'category', 'title', 'bullets', 'narration', 'source_name', 'source_url', 'published', 'evidence', 'verification', 'source_text', 'nav_label', 'event_date', 'event_date_evidence'})
         self.assertEqual(story['verification'], 'extractive')
         self.assertEqual(story['category'], '模型发布')
         self.assertEqual(story['narration'], story['title'] + '。' + ''.join(story['bullets']))

@@ -30,3 +30,41 @@ def test_preview_escapes_untrusted_article_titles(tmp_path):
 def test_invalid_limit_fails_before_collection():
     p = subprocess.run([sys.executable, '-m', 'dailyreport', '--limit', '0'], capture_output=True)
     assert p.returncode == 2
+
+
+def test_import_keeps_old_edition_label_but_filters_against_search_time(tmp_path, monkeypatch):
+    from copy import deepcopy
+    from datetime import datetime
+    import dailyreport.__main__ as cli
+    from dailyreport.recency import SHANGHAI
+
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 9, 13, 12, tzinfo=SHANGHAI)
+
+    monkeypatch.setattr(cli, 'datetime', Clock)
+    briefing = fixture()
+    briefing['search_date'] = '2026-09-11'
+    current = deepcopy(briefing['stories'][0])
+    current.update(title='当前模型', published='2026-09-12', event_date='2026-09-12')
+    briefing['stories'][0]['event_date'] = '2026-09-11'
+    briefing['stories'].append(current)
+    source = tmp_path / 'input.json'
+    source.write_text(json.dumps(briefing), encoding='utf-8')
+    output = tmp_path / 'result'
+    assert cli.main(['--input', str(source), '--output', str(output), '--collect-only']) == 0
+    result = json.loads((output / 'briefing.json').read_text('utf-8'))
+    assert result['date'] == '2026-09-11'
+    assert result['search_date'] == '2026-09-13'
+    assert [s['title'] for s in result['stories']] == ['当前模型']
+    assert len(result['excluded_stories']) == 1
+    assert '2026年09月12日 — 09月13日' in (output / 'index.html').read_text('utf-8')
+    assert '导入稿件筛选' in (output / 'report.md').read_text('utf-8')
+    assert not (output / 'daily.mp4').exists()
+
+    briefing['stories'] = briefing['stories'][:1]
+    source.write_text(json.dumps(briefing), encoding='utf-8')
+    rejected_output = tmp_path / 'rejected'
+    assert cli.main(['--input', str(source), '--output', str(rejected_output), '--collect-only']) == 1
+    assert not rejected_output.exists()

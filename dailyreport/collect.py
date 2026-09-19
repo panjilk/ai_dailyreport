@@ -8,7 +8,10 @@ import re
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import xml.etree.ElementTree as ET
 
-from .recency import yesterday_start, article_event_date, news_date
+from .recency import yesterday_start, article_event_evidence, news_date
+from .international import source_rows, paper_details, english_topic, english_summary
+from .models import MODEL_NAMES, model_labels
+from .topics import ai_related, news_priority
 
 from bs4 import BeautifulSoup
 import feedparser
@@ -29,12 +32,8 @@ NOISE = re.compile(r'advert|advertisement|navigation|related|recommend|share|com
 TRACKING = {'spm', 'from', 'ref', 'referrer', 'fbclid', 'gclid', 'msclkid', 'source', 'mc_cid', 'mc_eid'}
 
 
-MODEL_NAMES = re.compile(
-    r'(?<![A-Za-z0-9_])(?:ChatGPT|GPT(?:[- ]?\d[\w.-]*)?|Claude|Gemini|DeepSeek|'
-    r'GLM(?:[- ]?\d[\w.-]*)?|Qwen(?:[- ]?\d[\w.-]*)?|Kimi|Llama|Grok|Mistral|'
-    r'ERNIE|Hunyuan)(?![A-Za-z_])|通义千问|智谱|文心|混元|豆包', re.I)
 MODEL_CHANGE = re.compile(
-    r'发布|推出|迭代|更新|升级|开源|新版本|新模型|能力|评测|测评|基准|测试|'
+    r'发布|推出|迭代|更新|升级|开源|上线|上新|开放|新版本|新模型|能力|评测|测评|基准|测试|'
     r'推理|数学|编程|代码生成|多模态|上下文|幻觉|准确率|语音|识别|理解|成绩|得分|超越|超过|提升')
 OFF_TOPIC = re.compile(
     r'融资|收购|投资|营收|财报|估值|上市|裁员|任命|离职|薪酬|人事|贫富|'
@@ -50,11 +49,11 @@ def _model_topic(title):
     # mentions integration. Integration/product headlines themselves stay out.
     main_clause = re.split(r'[，,；;：:]', title, maxsplit=1)[0]
     if (MODEL_NAMES.match(main_clause) and
-            re.search(r'模型(?:正式)?(?:发布|开源|推出)|发布.{0,12}模型', main_clause) and
+            re.search(r'发布|开源|推出|上线|上新|迭代|更新|升级', main_clause) and
             not OFF_TOPIC.search(main_clause)):
         title = main_clause
     named = MODEL_NAMES.search(title)
-    generic = re.search(r'大语言模型|语言模型|多模态(?:基础)?模型|基础模型', title)
+    generic = re.search(r'大模型|大语言模型|语言模型|多模态(?:基础)?模型|基础模型', title)
     if not (named or generic) or not MODEL_CHANGE.search(title):
         return False
     # A model-effect comparison can involve hardware or pricing; a product
@@ -67,18 +66,7 @@ def _model_topic(title):
 
 
 def _nav_label(title):
-    names = []
-    aliases = {'通义千问': 'Qwen', '智谱': 'GLM', '文心': 'ERNIE', '混元': 'Hunyuan'}
-    for match in MODEL_NAMES.finditer(title):
-        raw = match.group()
-        name = aliases.get(raw, raw)
-        for canonical in ('ChatGPT', 'GPT', 'Claude', 'Gemini', 'DeepSeek', 'GLM',
-                          'Qwen', 'Kimi', 'Llama', 'Grok', 'Mistral', 'ERNIE', 'Hunyuan'):
-            if name.casefold().startswith(canonical.casefold()):
-                name = canonical
-                break
-        if name not in names:
-            names.append(name)
+    names = model_labels(title)
     if len(names) >= 3:
         return '多模型对比'
     label = ' / '.join(names)
@@ -90,6 +78,8 @@ def _nav_label(title):
 def classify(title: str, narration: str) -> str:
     """Title first, then narration; ordered rules resolve overlapping topics."""
     rules = (
+        ('行业动态', r'政治|选举|监管|政策|法规|法案|禁令|诉讼|法院|立法'),
+        ('产品应用', r'用量|额度|限额|重置|订阅|套餐|定价|降价|涨价'),
         ('模型发布', r'(?:发布|推出|上线|开源).{0,24}(?:模型|GPT|Claude|Gemini|DeepSeek)|(?:模型|GPT|Claude|Gemini|DeepSeek).{0,24}(?:发布|推出|上线|开源)'),
         ('开发生态', r'开发者|开发工具|开源|代码仓库|开发框架|插件|(?<![a-z0-9_])(?:SDK|API|GitHub|MCP)(?![a-z0-9_])'),
         ('产品应用', r'应用|助手|手机|浏览器|办公|客户端|机器人|智能终端|产品|上线|接入'),
@@ -180,22 +170,30 @@ def _canonical(url):
         return None
 
 
-def select_recent(items: list[dict], now: datetime, hours: int, limit: int) -> list[dict]:
+def select_recent(items: list[dict], now: datetime, hours: int, limit: int, stats=None) -> list[dict]:
     """Newest first; inclusive lower boundary; never infer missing timezones."""
     _validate(now, hours, limit)
     cutoff = max(now - timedelta(hours=hours), yesterday_start(now))
+    stats = stats if stats is not None else {}
+    for key in ('invalid_metadata', 'outside_window', 'duplicates'):
+        stats.setdefault(key, 0)
     eligible = []
     for row in items:
         published = _date(row.get('published'))
         url = _canonical(row.get('source_url', row.get('url', row.get('link', ''))))
         title = re.sub(r'\s+', ' ', str(row.get('title') or '')).strip()
-        if published is not None and cutoff <= published <= now and url and title:
+        if published is None or not url or not title:
+            stats['invalid_metadata'] += 1
+        elif not cutoff <= published <= now:
+            stats['outside_window'] += 1
+        else:
             eligible.append((published, dict(row, title=title, source_url=url, published=published.isoformat())))
     eligible.sort(key=lambda pair: pair[0], reverse=True)
     result, urls, titles = [], set(), set()
     for _, row in eligible:
         key = re.sub(r'[\W_]+', '', row['title']).casefold()
         if row['source_url'] in urls or key in titles:
+            stats['duplicates'] += 1
             continue
         urls.add(row['source_url'])
         titles.add(key)
@@ -227,7 +225,7 @@ def extract_paragraphs(html) -> list[str]:
         if node.attrs is not None and NOISE.search(' '.join([node.get('id', ''), *node.get('class', [])])):
             node.decompose()
     root = None
-    for selector in ('#paragraph', '[itemprop="articleBody"]', '.article-content', '.article_content', '#article-content', 'article', 'main'):
+    for selector in ('#paragraph', '[itemprop="articleBody"]', '.article-content', '.article_content', '#article-content', 'article', '.article', 'main'):
         root = soup.select_one(selector)
         if root is not None:
             break
@@ -438,6 +436,13 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
     scope = config.get('topic_scope', 'foundation_models')
     if scope not in ('foundation_models', 'all_ai'):
         raise ValueError('topic_scope must be foundation_models or all_ai')
+    budget = config.get('article_request_budget', 40)
+    if isinstance(budget, bool) or not isinstance(budget, int) or not 1 <= budget <= 100:
+        raise ValueError('article_request_budget 必须为1至100的整数')
+    stats = dict(feed_entries=0, off_topic=0, source_failures=0,
+                 article_requests=0, fetch_failures=0, date_rejected=0,
+                 content_rejected=0, summary_rejected=0, selected=0,
+                 article_request_budget=budget)
     rows, errors = [], []
     for source in config.get('sources', []):
         if not source.get('enabled', True):
@@ -445,44 +450,108 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
         name, url = source.get('name', 'RSS'), source.get('url', '')
         try:
             content = _fetch(url)
+            if source.get('type') in ('hf_papers', 'arxiv', 'github_releases'):
+                for row in source_rows(source, content):
+                    stats['feed_entries'] += 1
+                    if scope == 'foundation_models' and not english_topic(row['title'], row['abstract']):
+                        stats['off_topic'] += 1
+                        continue
+                    rows.append(dict(row, source_name=name))
+                continue
             root = ET.fromstring(content)
             if root.tag.rsplit('}', 1)[-1].lower() not in ('rss', 'feed', 'rdf'):
                 raise ValueError('response is not RSS/Atom XML')
             feed = feedparser.parse(content)
             for entry in feed.entries[:500]:
+                stats['feed_entries'] += 1
                 title = BeautifulSoup(entry.get('title', ''), 'html.parser').get_text(' ', strip=True)
                 description = BeautifulSoup(entry.get('summary', ''), 'html.parser').get_text(' ', strip=True)
                 if scope == 'foundation_models' and not _model_topic(title):
+                    stats['off_topic'] += 1
                     continue
                 if scope == 'all_ai' and not source.get('ai_only', False) and not (
-                        AI_TERMS.search(title) or CORE_AI_TERMS.search(description[:120])):
+                        ai_related(title) or ai_related(description[:300])):
+                    stats['off_topic'] += 1
                     continue
-                rows.append(dict(title=title, source_name=name, source_url=entry.get('link', ''), published=entry.get('published')))
+                # Atom may only provide updated; event evidence is still mandatory.
+                rows.append(dict(title=title, source_name=name, source_url=entry.get('link', ''), published=entry.get('published') or entry.get('updated')))
         except (requests.RequestException, OSError, ValueError, ET.ParseError) as exc:
+            stats['source_failures'] += 1
             errors.append(f'{name} ({url}): {exc}')
-    # At most 20 article requests even if a caller asks for a huge edition.
-    candidates = select_recent(rows, now, hours, min(20, limit * 3))
+    # Scan the complete eligible pool until enough usable stories or budget exhaustion.
+    candidates = select_recent(rows, now, hours, max(1, len(rows)), stats)
+    if scope == 'all_ai':
+        candidates.sort(key=news_priority)  # Stable: newest first within each priority.
+    stats['eligible_candidates'] = len(candidates)
     stories = []
+    processed = 0
     for row in candidates:
+        if stats['article_requests'] >= budget:
+            break
+        processed += 1
+        stage = 'content_rejected'
         try:
+            if row.get('content_kind'):
+                kind = row['content_kind']
+                if kind == 'paper':
+                    stage = 'fetch_failures'
+                    stats['article_requests'] += 1
+                    content = _fetch(row['source_url'])
+                    stage = 'date_rejected'
+                    original, event = paper_details(content)
+                else:
+                    original = row['abstract']
+                    event = {k: row[k] for k in ('event_date', 'event_date_evidence')}
+                stage = 'date_rejected'
+                moment = _date(event['event_date'])
+                if moment is None or not max(now - timedelta(hours=hours), yesterday_start(now)) <= moment <= now:
+                    raise ValueError('论文首次提交或正式版本发布日期不在本次搜查窗口内')
+                stage = 'summary_rejected'
+                bullets = english_summary(original, kind)
+                # Reject an oversized extract before it can fail the whole video.
+                from .render import single_page_layout
+                single_page_layout({'bullets': bullets})
+                narration = _spoken_title(row['title']) + ''.join(bullets)
+                stories.append(dict(row, **{k: v for k, v in event.items() if k not in row},
+                                    id=hashlib.sha256(row['source_url'].encode()).hexdigest()[:16],
+                                    category='技术洞察' if kind == 'paper' else '开发生态',
+                                    nav_label='论文' if kind == 'paper' else '模型工具',
+                                    bullets=bullets, narration=narration, evidence=original,
+                                    verification='english_source_extract', language='en', source_text=original))
+                if len(stories) >= limit:
+                    break
+                continue
             _reject_debunk(row['title'])
-            paragraphs = extract_paragraphs(_fetch(row['source_url']))
-            event_date = article_event_date(''.join(paragraphs), row['published'])
+            stage = 'fetch_failures'
+            stats['article_requests'] += 1
+            content = _fetch(row['source_url'])
+            stage = 'content_rejected'
+            paragraphs = extract_paragraphs(content)
+            if not paragraphs:
+                raise ValueError('没有可抽取的中文正文')
+            stage = 'date_rejected'
+            event = article_event_evidence('\n'.join(paragraphs), row['published'], row['title'], scope=scope)
+            event_date = event['event_date']
             if not yesterday_start(now).date() <= news_date(event_date) <= now.astimezone(SHANGHAI).date():
-                raise ValueError('模型事件早于昨天或尚未发生，不能用新转载日期替代事件日期')
+                raise ValueError('新闻事件早于昨天或尚未发生，不能用新转载日期替代事件日期')
+            stage = 'summary_rejected'
             bullets, narration = _summary(paragraphs, row['title'])
             stories.append(dict(row, id=hashlib.sha256(row['source_url'].encode()).hexdigest()[:16],
-                                event_date=event_date, category=classify(row['title'], narration), nav_label=_nav_label(row['title']), bullets=bullets, narration=narration,
+                                **event, category=classify(row['title'], narration), nav_label=_nav_label(row['title']) if MODEL_NAMES.search(row['title']) or scope == 'foundation_models' else classify(row['title'], narration), bullets=bullets, narration=narration,
                                 evidence=''.join(bullets), verification='extractive',
                                 source_text='\n'.join(paragraphs)))
         except (requests.RequestException, OSError, ValueError) as exc:
+            stats[stage] += 1
             errors.append(f"{row['source_name']} ({row['source_url']}): {exc}")
         if len(stories) >= limit:
             break
+    stats['selected'] = len(stories)
+    stats['unexamined_candidates'] = len(candidates) - processed
+    stats['budget_exhausted'] = stats['article_requests'] >= budget and processed < len(candidates) and len(stories) < limit
     if not stories:
-        raise RuntimeError('没有可用资讯：指定窗口内无符合条件且正文可抽取的文章。' + '；'.join(errors))
+        raise RuntimeError('没有可用资讯：指定窗口内无符合条件且正文可抽取的文章。筛选统计：' + str(stats) + '；'.join(errors))
     date = now.astimezone(SHANGHAI).date().isoformat()
     return dict(date=date, window_days=2,
                 title=f'AI 日报 · {date}',
-                edition_note=f'仅北京时间今天和昨天；当天优先，不以旧闻补足条数；中文原文机器抽取的完整要点摘要，未经人工核验；保留来源提供的时区日期。',
-                stories=stories, collection_errors=errors)
+                edition_note=f'仅北京时间今天和昨天；大模型迭代优先，其次用量与订阅调整，再收录其他AI新闻；同优先级新消息优先，不以旧闻补足条数；中英文原文机器抽取的完整要点摘要，未经人工核验；英文保留原文；论文结果为作者报告；保留来源提供的时区日期。',
+                stories=stories, collection_errors=errors, collection_stats=stats)

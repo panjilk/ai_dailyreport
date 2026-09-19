@@ -101,7 +101,7 @@ def test_oversized_summary_requests_rewrite_instead_of_paging_or_truncating():
 def test_navigation_uses_model_names():
     from dailyreport.render import navigation_labels
     assert navigation_labels({'stories': [{'title': '新版本', 'nav_label': 'ChatGPT'},
-                                          {'title': '新模型', 'nav_label': 'GLM'}]}) == ['概览', 'ChatGPT', 'GLM', '来源']
+                                          {'title': '新模型', 'nav_label': 'GLM'}]}) == ['概览', 'ChatGPT', 'GLM', '结束']
 
 
 def test_every_displayed_summary_point_is_in_the_spoken_transcript():

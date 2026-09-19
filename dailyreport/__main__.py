@@ -28,10 +28,24 @@ def export_text(briefing, output):
                f"来源：[{story['source_name']}]({story['source_url']})", '',
                '**口播**', '', story['narration'], '']
         script += [f"{i:02} {story['title']}", story['narration'], '']
+        if story.get('event_date'):
+            md += [f"模型事件日期：{story['event_date']}", '']
+        if story.get('event_date_evidence'):
+            md += ['日期证据（原文）：' + story['event_date_evidence'], '']
         for source in story.get('supporting_sources', []):
             md += [f"补充证据：[{source['name']}]({source['url']})", '']
     if briefing.get('collection_errors'):
         md += ['## 采集记录', '', *['- ' + x for x in briefing['collection_errors']], '']
+    if briefing.get('collection_stats'):
+        labels = {'feed_entries': '读取条目', 'off_topic': '主题不符', 'source_failures': '来源失败',
+                  'invalid_metadata': '时间或链接无效', 'outside_window': '报道时间超窗', 'duplicates': '重复条目',
+                  'eligible_candidates': '候选总数', 'article_requests': '正文请求', 'fetch_failures': '正文请求失败',
+                  'date_rejected': '事件日期不合格', 'content_rejected': '正文不合格', 'summary_rejected': '摘要不合格',
+                  'selected': '最终收录', 'article_request_budget': '正文请求上限',
+                  'unexamined_candidates': '未检查候选', 'budget_exhausted': '预算耗尽'}
+        md += ['## 筛选统计', '', *[f'- {labels.get(k, k)}：{v}' for k, v in briefing['collection_stats'].items()], '']
+    if briefing.get('excluded_stories'):
+        md += ['## 导入稿件筛选', '', *[f'- {x["title"]}：{x["reason"]}' for x in briefing['excluded_stories']], '']
     (output / 'report.md').write_text('\n'.join(md), encoding='utf-8')
     (output / 'script.txt').write_text('\n'.join(script), encoding='utf-8')
 
@@ -113,7 +127,7 @@ def main(argv=None):
         export_text(briefing, output)
         if not args.collect_only:
             render(briefing, output, args.voice or config.get('voice', 'zh-CN-XiaoxiaoNeural'), args.tts,
-                   args.rate if args.rate is not None else config.get('speech_rate', 20))
+                   args.rate if args.rate is not None else config.get('speech_rate', 20), search_time=now)
         write_preview(briefing, output)
         print(f'完成：{output / "index.html"}', flush=True)
         if args.open and os.name == 'nt':

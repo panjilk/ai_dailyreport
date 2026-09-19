@@ -1,12 +1,41 @@
 {
   "voice": "zh-CN-XiaoxiaoNeural",
   "speech_rate": 20,
-  "topic_scope": "foundation_models",
+  "topic_scope": "all_ai",
+  "article_request_budget": 40,
   "sources": [
     {
       "name": "IT之家",
       "url": "https://www.ithome.com/rss/",
       "ai_only": false,
+      "enabled": true
+    },
+    {
+      "name": "量子位",
+      "url": "https://www.qbitai.com/feed",
+      "type": "rss",
+      "ai_only": true,
+      "enabled": true
+    },
+    {
+      "name": "Hugging Face Papers",
+      "url": "https://huggingface.co/api/daily_papers",
+      "type": "hf_papers",
+      "ai_only": true,
+      "enabled": true
+    },
+    {
+      "name": "arXiv cs.CL",
+      "url": "https://rss.arxiv.org/rss/cs.CL",
+      "type": "arxiv",
+      "ai_only": true,
+      "enabled": true
+    },
+    {
+      "name": "Transformers Releases",
+      "url": "https://api.github.com/repos/huggingface/transformers/releases?per_page=20",
+      "type": "github_releases",
+      "ai_only": true,
       "enabled": true
     }
   ]

@@ -137,13 +137,39 @@ def paginate_story(story):
 
 
 def navigation_labels(briefing):
-    return ['概览'] + [s.get('nav_label') or s['title'] for s in briefing['stories']] + ['来源']
+    return ['概览'] + [s.get('nav_label') or s['title'] for s in briefing['stories']] + ['结束']
+
+
+def prepare_video_briefing(briefing):
+    """Keep the full written report; use separate concise video copy."""
+    result = deepcopy(briefing)
+    for story in result['stories']:
+        title = story.get('video_title') or re.split(r'[，：:]', story['title'], maxsplit=1)[0]
+        bullets = story.get('video_bullets')
+        if bullets is None:
+            source = re.escape(story['source_name'])
+            candidates = []
+            for bullet in story['bullets']:
+                text = re.sub(r'^(?:据)?' + source + r'[^，。]{0,35}(?:消息|报道|获悉)[，：,\s]*', '', bullet)
+                for sentence in re.split(r'(?<=[。！？])', text):
+                    if sentence and story['source_name'] not in sentence and len(title + sentence) <= 65:
+                        candidates.append(sentence)
+            bullets = candidates[:1]
+            if not bullets:
+                raise ValueError('请为这条新闻填写约40至60字的 video_title 和 video_bullets：' + story['title'])
+        story['title'], story['bullets'] = title, bullets
+        story['narration'] = canonical_narration(story)
+        if re.search(r'https?://|来源|据.{0,20}(?:报道|消息)', story['narration']) or story['source_name'] in story['narration']:
+            raise ValueError('视频短稿仍包含新闻来源，请编辑 video_title/video_bullets：' + title)
+        if len(story['narration']) > 100:
+            raise ValueError('视频短稿过长，请精简到约40至60字：' + title)
+    return result
 
 
 def window_label(briefing):
     if briefing.get('recency_policy') == 'today_and_yesterday_only':
-        today = date.fromisoformat(briefing['date'])
-        return f'仅今天与昨天：{today - timedelta(days=1):%m月%d日} — {today:%m月%d日}（北京时间）'
+        today = date.fromisoformat(briefing.get('search_date', briefing['date']))
+        return f'搜查窗口：{today - timedelta(days=1):%Y年%m月%d日} — {today:%m月%d日}（北京时间）'
     if briefing.get('window_hours'):
         return f"采集窗口：最近 {briefing['window_hours']} 小时"
     end = date.fromisoformat(briefing['date'])
@@ -172,9 +198,9 @@ def base_canvas(briefing, active=None):
     d.line((70, 41, 86, 41), fill='white', width=3)
     d.line((78, 33, 78, 49), fill='white', width=3)
     d.text((110, 22), 'AI DAILY', font=font(28, True), fill=INK)
-    d.text((296, 26), '/  大模型迭代日报', font=font(23), fill=MUTED)
+    d.text((296, 26), '/  AI 综合日报', font=font(23), fill=MUTED)
     d.text((1550, 26), briefing['date'] + '   /   中文版', font=font(23), fill=MUTED)
-    for i, label in enumerate(['版本迭代', '能力与效果', '适用场景与限制']):
+    for i, label in enumerate(['模型迭代优先', '产品与用量', '政策与行业']):
         x = i * 640
         d.rectangle((x, 84, x + 640, 150), fill='#EAE9E1')
         d.line((x, 84, x, 150), fill='#D8DAD1', width=1)
@@ -187,7 +213,7 @@ def overview_image(briefing):
     d = ImageDraw.Draw(im)
     d.text((90, 184), 'THE DAILY BRIEF  /  每日精选', font=font(22), fill=ACCENT)
     d.text((84, 220), briefing['date'] + ' 资讯概览', font=font(70, True), fill=ACCENT)
-    d.text((90, 319), window_label(briefing) + f"     ·     {len(briefing['stories'])} 条资讯     ·     来源见日报", font=font(26), fill=MUTED)
+    d.text((90, 319), window_label(briefing) + f"     ·     {len(briefing['stories'])} 条资讯", font=font(26), fill=MUTED)
     for i, story in enumerate(briefing['stories']):
         columns = min(3, len(briefing['stories'])) if len(briefing['stories']) <= 6 else 4
         rows = math.ceil(len(briefing['stories']) / columns)
@@ -220,9 +246,6 @@ def story_image(briefing, story, index, bullets=None, page_no=1, page_total=1):
             d.text((170, y), line, font=font(size), fill=INK)
             y += size * 1.4
         y += 22
-    d.line((130, 812, 1780, 812), fill='#E6E9E3', width=2)
-    domain = re.sub(r'^https?://', '', story['source_url']).split('/')[0]
-    fitted(d, f"来源  {story['source_name']}  ·  {domain}" + ("  /  补充证据见文字稿" if story.get('supporting_sources') else ""), (130, 840), 1640, 1, 22, fill=MUTED)
     return im
 
 
@@ -230,13 +253,8 @@ def outro_image(briefing):
     im = base_canvas(briefing)
     d = ImageDraw.Draw(im)
     d.text((94, 222), 'KEEP TRACK. THINK CLEARLY.', font=font(28), fill=ACCENT)
-    d.text((86, 290), '关注模型迭代，看懂能力变化', font=font(66, True), fill=INK)
-    d.text((92, 409), '完整来源、文字日报与字幕，已随视频保存。', font=font(33), fill=MUTED)
-    d.rounded_rectangle((90, 515, 1830, 885), radius=30, fill='white')
-    sources = list(dict.fromkeys(s['source_name'] for s in briefing['stories']))
-    for i, name in enumerate(sources[:8]):
-        x, y = 130 + (i % 2) * 825, 550 + (i // 2) * 76
-        fitted(d, f'{i + 1:02}  {name}', (x, y), 770, 1, 27, fill=INK)
+    d.text((86, 290), '关注模型迭代，了解 AI 新动态', font=font(66, True), fill=INK)
+    d.text((92, 409), '本期播报结束，我们下期再见。', font=font(33), fill=MUTED)
     return im
 
 
@@ -258,7 +276,7 @@ def frame_with_subtitle(base, text, current, total, story_index, story_count, la
         left, right = i * W / nav_count, (i + 1) * W / nav_count
         selected = i == story_index
         d.rectangle((left, 1020, right - 2, 1073), fill=ACCENT if selected else '#E5E7DE')
-        label = labels[i] if labels else ('概览' if i == 0 else '来源' if i == nav_count - 1 else '模型更新')
+        label = labels[i] if labels else ('概览' if i == 0 else '结束' if i == nav_count - 1 else '模型更新')
         face = font(19)
         if face.getlength(label) > right - left - 16:
             raise ValueError('底部导航名称过长，请填写简短的 nav_label 模型名称。')
@@ -383,29 +401,30 @@ def synthesize(jobs, directory, voice, engine, rate=20):
 
 def build_scene_plan(briefing):
     count = len(briefing['stories'])
-    intro = f"大家好，欢迎收看{briefing['date'][5:7]}月{briefing['date'][8:10]}日的人工智能日报。本期一共{count}条新闻，下面逐条介绍。"
+    intro = f'AI快报，本期{count}条消息。'
     scenes = [{'image': overview_image(briefing), 'units': [intro], 'label': '资讯概览', 'chapter': 0, 'bullets': []}]
     for i, story in enumerate(briefing['stories'], 1):
         pages = paginate_story(story)
         if ''.join(part for page in pages for part in page) != ''.join(story['bullets']):
             raise ValueError('摘要分页没有完整覆盖原稿。')
         for p, bullets in enumerate(pages):
-            units = ([story['title'].rstrip('。！？.!?') + '。'] if p == 0 else []) + bullets
+            units = [canonical_narration(story)]
             scenes.append({'image': story_image(briefing, story, i, bullets, p + 1, len(pages)),
                            'units': units, 'label': story['title'], 'chapter': i,
                            'page': p + 1, 'page_count': len(pages), 'bullets': bullets})
         actual = ''.join(text for scene in scenes if scene['chapter'] == i for text in scene['units'])
         if actual != canonical_narration(story):
             raise ValueError('资讯口播未完整覆盖标题和全部摘要。')
-    outro = '以上就是本期全部新闻。完整文字稿和来源链接已随视频保存。感谢收看，我们下期再见。'
-    scenes.append({'image': outro_image(briefing), 'units': [outro], 'label': '来源与结语', 'chapter': count + 1, 'bullets': []})
+    outro = '本期播报结束，下期再见。'
+    scenes.append({'image': outro_image(briefing), 'units': [outro], 'label': '结束', 'chapter': count + 1, 'bullets': []})
     return scenes
 
 
-def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='auto', rate=20) -> Path:
+def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='auto', rate=20, *, search_time=None) -> Path:
     briefing = prepare_briefing(briefing)
     validate_briefing(briefing)
-    enforce_recency(briefing, datetime.now(SHANGHAI))
+    enforce_recency(briefing, search_time or datetime.now(SHANGHAI))
+    briefing = prepare_video_briefing(briefing)
     if not isinstance(rate, int) or not -10 <= rate <= 60:
         raise ValueError('语速 rate 必须为 -10 至 60 的整数。')
     output = Path(output).resolve()
@@ -431,6 +450,27 @@ def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='a
             jobs.append({'text': sentence, 'path': str(path), 'scene': i, 'chapter': scene['chapter']})
     print(f'正在以 {rate:+d}% 语速生成 {len(jobs)} 段完整口播……', flush=True)
     engine_used = synthesize(jobs, work, voice, engine, rate)
+    # Fit complete short narration to 9.7 seconds plus a 0.3 second scene pause.
+    for job in jobs:
+        if not 1 <= job['chapter'] <= count:
+            continue
+        path = Path(job['path'])
+        with wave.open(str(path)) as reader:
+            duration = reader.getnframes() / reader.getframerate()
+        factor = duration / 9.7
+        if not 0.65 <= factor <= 1.5:
+            raise ValueError(f'短稿配音为{duration:.1f}秒，无法自然调整到约10秒，请重新精简或补充短稿。')
+        normalized = path.with_name(path.stem + '-timed.wav')
+        run_ffmpeg(['-i', str(path), '-af', f'atempo={factor:.9f},apad,atrim=duration=9.7',
+                    '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', str(normalized)])
+        normalized.replace(path)
+        word_path = path.with_suffix('.words.json')
+        if word_path.exists():
+            words = json.loads(word_path.read_text('utf-8'))
+            for word in words:
+                word['offset'] = round(word['offset'] / factor)
+                word['duration'] = round(word['duration'] / factor)
+            word_path.write_text(json.dumps(words, ensure_ascii=False), encoding='utf-8')
     print(f'配音完成：{engine_used}', flush=True)
     cursor_frames, srt, concat, timeline, speech_units = 0, [], ['ffconcat version 1.0'], [], []
     combined = output / 'narration.wav'

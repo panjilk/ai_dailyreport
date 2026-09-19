@@ -1,0 +1,28 @@
+"""Shared model/company aliases for topic, date evidence and navigation."""
+import re
+
+ALIASES = {
+    'ChatGPT': ('ChatGPT',), 'GPT': ('GPT', 'OpenAI'),
+    'Claude': ('Claude', 'Anthropic'), 'Gemini': ('Gemini',),
+    'DeepSeek': ('DeepSeek', '深度求索'),
+    'GLM': ('GLM', '智谱', 'Zhipu', 'Z.ai'),
+    'Kimi': ('Kimi', '月之暗面', 'Moonshot'),
+    'Qwen': ('Qwen', '通义千问', '千问', '通义'),
+    '豆包': ('豆包', 'Doubao', 'Seed'),
+    'ERNIE': ('ERNIE', '文心一言', '文心'),
+    'Hunyuan': ('Hunyuan', '混元'),
+    'MiniMax': ('MiniMax', '稀宇'), '阶跃星辰': ('StepFun', '阶跃星辰', 'Step'),
+    'InternLM': ('InternLM', '书生'), '百川': ('Baichuan', '百川'),
+    '零一万物': ('Yi', '零一万物'), '星火': ('讯飞星火', '星火', 'Spark'),
+    'Llama': ('Llama',), 'Grok': ('Grok',), 'Mistral': ('Mistral',),
+}
+LOOKUP = {alias.casefold(): name for name, aliases in ALIASES.items() for alias in aliases}
+parts = []
+for alias in sorted(LOOKUP, key=len, reverse=True):
+    escaped = re.escape(alias)
+    parts.append(r'(?<![A-Za-z0-9_])' + escaped + r'(?![A-Za-z_])' if alias.isascii() else escaped)
+MODEL_NAMES = re.compile('|'.join(parts), re.I)
+
+
+def model_labels(text):
+    return list(dict.fromkeys(LOOKUP[m.group().casefold()] for m in MODEL_NAMES.finditer(text)))
