@@ -4,7 +4,7 @@ import pytest
 
 from dailyreport.collect import collect, classify
 from dailyreport.recency import SHANGHAI, article_event_evidence, enforce_recency
-from dailyreport.topics import ai_related, news_priority
+from dailyreport.topics import ai_related, editorial_candidate, news_priority
 
 
 @pytest.mark.parametrize('title,text,category', [
@@ -38,6 +38,57 @@ def test_priority_applies_before_limit_and_survives_final_sort(fetch):
     now = datetime(2026, 9, 14, 12, tzinfo=SHANGHAI)
     result = collect({'topic_scope': 'all_ai', 'sources': [{'name': 'test', 'url': 'https://example.com/rss'}]}, now, 48, 2)
     enforce_recency(result, now)
-    assert [s['title'] for s in result['stories']] == [titles[2], titles[1]]
+    assert [s['title'] for s in result['stories']] == [titles[2], titles[0]]
     assert [news_priority(s) for s in result['stories']] == [0, 1]
     assert fetch.call_count == 3
+
+
+@pytest.mark.parametrize('title', [
+    'AI 早报：三家公司发布新品',
+    'ChatGPT 更新；苹果发布手机；车企公布销量',
+    '千万奖金只等最会用 AI 的你',
+])
+def test_roundups_and_promotions_are_not_ranked_as_news(title):
+    assert not editorial_candidate(title)
+
+
+def test_same_heat_level_keeps_newest_story_first():
+    stories = [
+        {'title': 'ChatGPT 接入办公软件', 'published': '2026-09-18'},
+        {'title': 'Claude 接入开发工具', 'published': '2026-09-19'},
+    ]
+    assert news_priority(stories[0]) == news_priority(stories[1]) == 1
+
+
+@pytest.mark.parametrize('title', [
+    'DeepSeek 新模型正式发布',
+    'GPT-6 推理能力升级',
+    'GLM 新版本发布',
+    'Claude 5 正式上线',
+    'SpaceXAI 发布 Grok Voice Transcribe 2.0 语音转文本模型：错误率降低约一半，价格保持不变',
+    'Grok Voice Transcribe 2.0 speech-to-text model launches today',
+])
+def test_only_explicit_model_milestones_enter_hottest_tier(title):
+    assert news_priority({'title': title}) == 0
+
+
+@pytest.mark.parametrize('title', [
+    'OpenAI 发布年度安全报告',
+    'Anthropic 发布 Claude 安全报告',
+    'ChatGPT 上线群聊功能',
+    'Claude 推出桌面端功能',
+    'ChatGPT Voice 2.0 上线群聊功能',
+    'ChatGPT Voice 2.0 客户端接入语音模型',
+    'Grok Voice Transcribe 2.0 模型发布评测报告',
+])
+def test_company_reports_and_product_features_do_not_enter_hottest_tier(title):
+    assert news_priority({'title': title}) == 1
+
+
+@pytest.mark.parametrize('title', [
+    'OpenAI 示警：先进 AI 可在 2 台相邻物理隔离 PC 间“对话”',
+    '研究人员警告 AI 智能体存在数据泄露隐患',
+    'OpenAI warns that AI agents can expose private data',
+])
+def test_ai_warnings_enter_hot_tier(title):
+    assert news_priority({'title': title}) == 1

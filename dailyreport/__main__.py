@@ -42,7 +42,7 @@ def export_text(briefing, output):
                   'eligible_candidates': '候选总数', 'article_requests': '正文请求', 'fetch_failures': '正文请求失败',
                   'date_rejected': '事件日期不合格', 'content_rejected': '正文不合格', 'summary_rejected': '摘要不合格',
                   'selected': '最终收录', 'article_request_budget': '正文请求上限',
-                  'unexamined_candidates': '未检查候选', 'budget_exhausted': '预算耗尽'}
+                  'source_cap_skipped': '来源优先上限暂缓', 'unexamined_candidates': '未检查候选', 'budget_exhausted': '预算耗尽'}
         md += ['## 筛选统计', '', *[f'- {labels.get(k, k)}：{v}' for k, v in briefing['collection_stats'].items()], '']
     if briefing.get('excluded_stories'):
         md += ['## 导入稿件筛选', '', *[f'- {x["title"]}：{x["reason"]}' for x in briefing['excluded_stories']], '']
@@ -96,19 +96,22 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description='一键采集 AI 新闻，生成中文配音日报视频。')
     parser.add_argument('--input', type=Path, help='使用已准备的 briefing JSON，跳过联网采集')
     parser.add_argument('--config', type=Path, default=ROOT / 'config.json')
-    parser.add_argument('--hours', type=int, default=48, help='最多回看48小时，且绝不早于北京时间昨天零点')
-    parser.add_argument('--limit', type=int, default=8, help='最多收录条数，1至12')
+    parser.add_argument('--hours', type=int, default=120, help='最多回看120小时，且绝不早于北京时间最近5天的首日零点')
+    parser.add_argument('--limit', type=int, default=10, help='最多收录条数，默认10，允许1至12')
     parser.add_argument('--output', type=Path, help='输出目录，默认按运行时间新建')
     parser.add_argument('--collect-only', action='store_true', help='仅采集文字，不制作视频')
     parser.add_argument('--tts', choices=['auto', 'edge', 'sapi'], default='auto')
-    parser.add_argument('--voice', help='联网语音，例如 zh-CN-XiaoxiaoNeural')
-    parser.add_argument('--rate', type=int, help='语速百分比，默认+20；支持-10至60')
+    parser.add_argument('--voice', help='联网语音，默认温和的 zh-CN-XiaoxiaoNeural')
+    parser.add_argument('--rate', type=int, help='语速百分比，默认+10（约1.1倍）；支持-10至60')
+    parser.add_argument('--pitch', type=int, help='音高调整，默认-8Hz；支持-20至20')
     parser.add_argument('--open', action='store_true', help='完成后打开本地预览页')
     args = parser.parse_args(argv)
-    if not 1 <= args.limit <= 12 or not 1 <= args.hours <= 48:
-        parser.error('--limit 必须在1至12之间，--hours 必须在1至48之间。')
+    if not 1 <= args.limit <= 12 or not 1 <= args.hours <= 120:
+        parser.error('--limit 必须在1至12之间，--hours 必须在1至120之间。')
     if args.rate is not None and not -10 <= args.rate <= 60:
         parser.error('--rate 必须在-10至60之间。')
+    if args.pitch is not None and not -20 <= args.pitch <= 20:
+        parser.error('--pitch 必须在-20至20之间。')
     try:
         now = datetime.now(SHANGHAI)
         config = json.loads(args.config.read_text(encoding='utf-8-sig'))
@@ -120,14 +123,18 @@ def main(argv=None):
             briefing = collect(config, now, args.hours, args.limit)
         briefing = prepare_briefing(briefing)
         validate_briefing(briefing)
-        enforce_recency(briefing, now)
+        enforce_recency(briefing, now, args.hours)
         output = (args.output or ROOT / 'outputs' / now.strftime('%Y-%m-%d_%H%M%S_%f')).resolve()
         if (output / 'daily.mp4').exists() or (output / 'briefing.json').exists():
             raise ValueError('该目录已有日报，请指定新的 --output，避免覆盖已有成片或文字稿。')
         export_text(briefing, output)
         if not args.collect_only:
             render(briefing, output, args.voice or config.get('voice', 'zh-CN-XiaoxiaoNeural'), args.tts,
-                   args.rate if args.rate is not None else config.get('speech_rate', 20), search_time=now)
+                   args.rate if args.rate is not None else config.get('speech_rate', 10),
+                   pitch_hz=args.pitch if args.pitch is not None else config.get('speech_pitch_hz', -8),
+                   warm=config.get('speech_warmth', True),
+                   english_voice=config.get('english_voice', 'zh-CN-XiaoxiaoNeural'),
+                   scene_lead_in_seconds=config.get('scene_lead_in_seconds', 1.0), search_time=now)
         write_preview(briefing, output)
         print(f'完成：{output / "index.html"}', flush=True)
         if args.open and os.name == 'nt':

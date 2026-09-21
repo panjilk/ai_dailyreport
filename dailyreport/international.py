@@ -9,7 +9,7 @@ from .models import MODEL_NAMES
 
 
 def english_topic(title, abstract):
-    text = title + ' ' + abstract
+    text = str(title or '') + ' ' + str(abstract or '')
     return bool(MODEL_NAMES.search(text) or re.search(r'large language model|\bLLMs?\b|foundation model|language model|multimodal|vision.language|reasoning|benchmark|evaluation', text, re.I))
 
 
@@ -38,7 +38,7 @@ def source_rows(source, content):
             yield dict(title=source['name'] + ' ' + (item.get('tag_name') or item.get('name', '')),
                        published=item.get('published_at'), event_date=item.get('published_at'),
                        event_date_evidence='GitHub release published_at: ' + str(item.get('published_at')),
-                       source_url=item.get('html_url', ''), abstract=item.get('body', ''), content_kind='release')
+                       source_url=item.get('html_url', ''), abstract=item.get('body') or '', content_kind='release')
     elif kind == 'arxiv':
         feed = feedparser.parse(content)
         if not feed.version:
@@ -70,6 +70,8 @@ def paper_details(content):
 
 def english_summary(text, kind):
     """Keep whole statements, attribution and caveats; do not invent translations."""
+    if not isinstance(text, (str, bytes)):
+        raise ValueError('英文正文不足以抽取摘要')
     text = BeautifulSoup(text, 'html.parser').get_text(' ', strip=True)
     text = re.sub(r'!\[[^\]]*\]\([^)]*\)', '', text)
     text = re.sub(r'\[([^\]]+)\]\([^)]*\)', r'\1', text)

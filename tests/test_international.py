@@ -86,6 +86,23 @@ def test_release_reaches_briefing_without_article_fetch(fetch):
     assert result['collection_stats']['article_requests'] == 0
 
 
+@patch('dailyreport.collect._fetch')
+def test_release_with_empty_body_is_skipped_without_aborting_collection(fetch):
+    fetch.return_value = json.dumps([
+        dict(tag_name='v5.1', html_url='https://github.com/a/b/releases/tag/v5.1',
+             published_at='2026-09-14T11:00:00Z', body=None),
+        dict(tag_name='v5.0', html_url='https://github.com/a/b/releases/tag/v5.0',
+             published_at='2026-09-14T10:00:00Z', body=ABSTRACT),
+    ])
+    result = collect({
+        'topic_scope': 'all_ai',
+        'sources': [{'name': 'Transformers', 'url': 'https://api.github.com/repos/a/b/releases',
+                     'type': 'github_releases'}],
+    }, NOW, 48, 1)
+    assert result['stories'][0]['title'] == 'Transformers v5.0'
+    assert result['collection_stats']['summary_rejected'] == 1
+
+
 def test_arxiv_replacements_are_not_new_papers():
     xml = '''<rss xmlns:arxiv="http://arxiv.org/schemas/atom"><channel>
     <item><title>LLM paper</title><link>https://arxiv.org/abs/2609.12345</link>

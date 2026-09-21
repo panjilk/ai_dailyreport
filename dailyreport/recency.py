@@ -1,14 +1,21 @@
-"""Today-first reporting with an absolute yesterday cutoff in Beijing time."""
+"""Bounded reporting windows and deterministic ranking in Beijing time."""
 from datetime import datetime, timedelta, timezone, date
 import re
 from .models import MODEL_NAMES, model_labels
 from .topics import ai_related, news_priority
 
 SHANGHAI = timezone(timedelta(hours=8))
+RECENCY_DAYS = 5
 
 
 def yesterday_start(now):
     return now.astimezone(SHANGHAI).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+
+
+def window_start(now, days=RECENCY_DAYS):
+    if isinstance(days, bool) or not isinstance(days, int) or days < 1:
+        raise ValueError('days must be a positive integer')
+    return now.astimezone(SHANGHAI).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days - 1)
 
 
 def news_date(value):
@@ -21,9 +28,31 @@ def news_date(value):
     return moment.astimezone(SHANGHAI).date()
 
 
-def enforce_recency(briefing, now):
-    today = now.astimezone(SHANGHAI).date()
-    oldest = yesterday_start(now).date()
+def _news_moment(value):
+    """Return an aware instant; date-only values mean Beijing midnight."""
+    text = str(value)
+    if re.fullmatch(r'\d{4}-\d{2}-\d{2}', text):
+        return datetime.fromisoformat(text).replace(tzinfo=SHANGHAI), True
+    moment = datetime.fromisoformat(text.replace('Z', '+00:00'))
+    if moment.tzinfo is None or moment.utcoffset() is None:
+        raise ValueError('新闻时间缺少时区')
+    return moment, False
+
+
+def _recency_bounds(now, hours):
+    if not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError('now must be a timezone-aware datetime')
+    if isinstance(hours, bool) or not isinstance(hours, int) or hours < 1:
+        raise ValueError('hours must be a positive integer')
+    end = now.astimezone(SHANGHAI)
+    return max(end - timedelta(hours=hours), window_start(end)), end
+
+
+def enforce_recency(briefing, now, hours=None):
+    if hours is None:
+        hours = briefing.get('window_hours', RECENCY_DAYS * 24)
+    oldest, end = _recency_bounds(now, hours)
+    today = end.date()
     news_date(briefing['date'])  # Edition labels do not determine the search window.
     retained, excluded = [], []
     for story in briefing.get('stories', []):
@@ -31,13 +60,17 @@ def enforce_recency(briefing, now):
             raise ValueError('新闻缺少 event_date，请核实模型更新或新评测实际发生日期。')
         reason = None
         for key in ('published', 'event_date'):
-            day = news_date(story[key])
-            if not oldest <= day <= today:
-                reason = '仅允许搜查当天和昨天的新闻'
-            if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', str(story[key])):
-                moment = datetime.fromisoformat(str(story[key]).replace('Z', '+00:00'))
-                if moment > now:
-                    reason = '新闻时间不能在未来'
+            moment, date_only = _news_moment(story[key])
+            if date_only:
+                # Extracted event evidence often identifies only a Beijing
+                # calendar day. Keep the cutoff day because its exact event
+                # time is unknown; timestamped values remain exact below.
+                if not oldest.date() <= moment.date() <= today:
+                    reason = f'仅允许搜查最近{hours}小时且不早于北京时间最近5天首日零点的新闻'
+            elif moment > end:
+                reason = '新闻时间不能在未来'
+            elif moment < oldest:
+                reason = f'仅允许搜查最近{hours}小时且不早于北京时间最近5天首日零点的新闻'
         if reason:
             excluded.append({'title': story['title'], 'reason': reason})
         else:
@@ -47,11 +80,16 @@ def enforce_recency(briefing, now):
     briefing['stories'] = retained
     briefing.setdefault('excluded_stories', []).extend(excluded)
     briefing['search_date'] = today.isoformat()
-    briefing['stories'].sort(key=lambda s: (news_date(s['event_date']), news_date(s['published'])), reverse=True)
+    briefing['stories'].sort(
+        key=lambda s: (_news_moment(s['published'])[0], _news_moment(s['event_date'])[0]),
+        reverse=True,
+    )
     briefing['stories'].sort(key=news_priority)
-    briefing['window_days'] = 2
-    briefing.pop('window_hours', None)
-    briefing['recency_policy'] = 'today_and_yesterday_only'
+    briefing['window_days'] = RECENCY_DAYS
+    briefing['window_hours'] = hours
+    briefing['window_start'] = oldest.isoformat()
+    briefing['window_end'] = end.isoformat()
+    briefing['recency_policy'] = 'bounded_hours'
 
 
 def article_event_evidence(text, published, title='', *, scope='foundation_models'):

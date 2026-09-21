@@ -110,7 +110,9 @@ class CollectionTests(unittest.TestCase):
         feed = '<rss><channel>' + entries + '</channel></rss>'
         fetch.side_effect = lambda url: feed if url.endswith('rss') else '<article><p>' + TEXT + '</p></article>'
         result = collect({'topic_scope': 'all_ai', 'sources': [{'name': '综合新闻', 'url': 'https://example.com/rss'}]}, NOW, 24, 8)
-        self.assertEqual([s['title'] for s in result['stories']], [row[0] for row in rows])
+        selected_titles = [s['title'] for s in result['stories']]
+        self.assertEqual(selected_titles[0], rows[4][0])
+        self.assertCountEqual(selected_titles, [row[0] for row in rows])
         self.assertEqual(fetch.call_count, 6)
 
     def test_safety_related_link_not_article_evidence(self):

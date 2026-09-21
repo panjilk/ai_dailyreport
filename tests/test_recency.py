@@ -9,13 +9,61 @@ NOW = datetime(2026, 9, 12, 16, tzinfo=SHANGHAI)
 def story(day, title='模型更新'):
     return dict(title=title, published=day, event_date=day)
 
-def test_today_first_and_yesterday_allowed():
-    b = dict(date='2026-09-12', stories=[story('2026-09-11'), story('2026-09-12')])
+def test_recent_five_days_are_allowed_newest_first():
+    b = dict(date='2026-09-12', stories=[story('2026-09-08'), story('2026-09-12')])
     enforce_recency(b, NOW)
     assert b['stories'][0]['event_date'] == '2026-09-12'
-    assert b['window_days'] == 2
+    assert b['window_days'] == 5
 
-@pytest.mark.parametrize('day',['2026-09-10','2026-09-13'])
+
+def test_same_priority_uses_full_published_timestamp_before_event_date():
+    newer_report = story('2026-09-10', '普通行业观察甲')
+    newer_report['published'] = '2026-09-12T15:30:00+08:00'
+    older_report = story('2026-09-12', '普通行业观察乙')
+    older_report['published'] = '2026-09-12T15:00:00+08:00'
+    briefing = dict(date='2026-09-12', stories=[older_report, newer_report])
+
+    enforce_recency(briefing, NOW)
+
+    assert [s['title'] for s in briefing['stories']] == ['普通行业观察甲', '普通行业观察乙']
+
+
+def test_same_day_published_timestamps_are_compared_across_timezones():
+    local = story('2026-09-12', '普通行业观察甲')
+    local['published'] = '2026-09-12T15:00:00+08:00'
+    utc = story('2026-09-12', '普通行业观察乙')
+    utc['published'] = '2026-09-12T07:30:00Z'
+    briefing = dict(date='2026-09-12', stories=[local, utc])
+
+    enforce_recency(briefing, NOW)
+
+    assert [s['title'] for s in briefing['stories']] == ['普通行业观察乙', '普通行业观察甲']
+
+
+def test_date_only_event_on_hourly_cutoff_day_is_allowed_but_earlier_day_is_not():
+    cutoff_day = story('2026-09-11', '截点当天事件')
+    cutoff_day['published'] = '2026-09-12T15:00:00+08:00'
+    earlier = story('2026-09-10', '更早事件')
+    earlier['published'] = '2026-09-12T15:30:00+08:00'
+    briefing = dict(date='2026-09-12', stories=[earlier, cutoff_day])
+
+    enforce_recency(briefing, NOW, hours=24)
+
+    assert [s['title'] for s in briefing['stories']] == ['截点当天事件']
+    assert briefing['window_start'] == '2026-09-11T16:00:00+08:00'
+    assert briefing['window_end'] == '2026-09-12T16:00:00+08:00'
+    assert briefing['window_hours'] == 24
+
+
+def test_large_hour_value_is_still_capped_at_five_beijing_calendar_days():
+    briefing = dict(date='2026-09-12', stories=[story('2026-09-07'), story('2026-09-08')])
+
+    enforce_recency(briefing, NOW, hours=240)
+
+    assert [s['event_date'] for s in briefing['stories']] == ['2026-09-08']
+    assert briefing['window_start'] == '2026-09-08T00:00:00+08:00'
+
+@pytest.mark.parametrize('day',['2026-09-07','2026-09-13'])
 def test_reject_old_and_future_event_even_with_fresh_article(day):
     s = story(day); s['published']='2026-09-12'
     with pytest.raises(ValueError, match='仅允许'):
@@ -23,11 +71,11 @@ def test_reject_old_and_future_event_even_with_fresh_article(day):
 
 
 def test_edition_date_does_not_expand_search_window():
-    b = dict(date='2026-08-01', stories=[story('2026-09-10'), story('2026-09-11'), story('2026-09-12')])
+    b = dict(date='2026-08-01', stories=[story('2026-09-07'), story('2026-09-08'), story('2026-09-12')])
     enforce_recency(b, NOW)
     assert b['date'] == '2026-08-01'
     assert b['search_date'] == '2026-09-12'
-    assert [s['event_date'] for s in b['stories']] == ['2026-09-12', '2026-09-11']
+    assert [s['event_date'] for s in b['stories']] == ['2026-09-12', '2026-09-08']
     assert len(b['excluded_stories']) == 1
     enforce_recency(b, NOW)
     assert len(b['excluded_stories']) == 1
@@ -78,10 +126,10 @@ def test_require_actual_event_date_for_import():
     with pytest.raises(ValueError, match='event_date'):
         enforce_recency(dict(date='2026-09-12',stories=[dict(title='旧闻',published='2026-09-12')]), NOW)
 
-def test_48_hours_never_reaches_day_before_yesterday():
+def test_120_hours_never_reaches_before_five_day_window():
     now=NOW.replace(hour=1)
-    rows=[dict(title=d,published=d,source_url='https://example.com/'+str(i)) for i,d in enumerate(['2026-09-10T23:59:59+08:00','2026-09-11T00:00:00+08:00','2026-09-12T00:00:00+08:00'])]
-    assert len(select_recent(rows,now,48,8))==2
+    rows=[dict(title=d,published=d,source_url='https://example.com/'+str(i)) for i,d in enumerate(['2026-09-07T23:59:59+08:00','2026-09-08T00:00:00+08:00','2026-09-12T00:00:00+08:00'])]
+    assert len(select_recent(rows,now,120,8))==2
 
 def test_new_report_does_not_refresh_old_release():
     assert article_event_date('9月10日正式发布DeepSeek新模型。','2026-09-12T10:00:00+08:00')=='2026-09-10'

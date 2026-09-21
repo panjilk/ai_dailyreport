@@ -5,6 +5,7 @@ import pytest
 
 from dailyreport.collect import _model_topic, _nav_label, collect
 from dailyreport.international import english_topic
+from dailyreport.models import model_labels
 from dailyreport.recency import article_event_date, SHANGHAI
 
 
@@ -38,6 +39,17 @@ def test_date_binding_recognizes_company_and_model_aliases():
 @pytest.mark.parametrize('brand', ['GLM', 'Zhipu', 'Kimi', 'Moonshot', 'Hunyuan', 'ERNIE', 'MiniMax', 'StepFun'])
 def test_english_domestic_aliases(brand):
     assert english_topic(brand + ' release', 'New capabilities are available.')
+
+
+@pytest.mark.parametrize('title', [
+    'A step toward reliable databases',
+    'Plant seed storage methods',
+    'A spark of creativity in education',
+    'Yi dynasty history',
+])
+def test_common_english_words_are_not_model_aliases(title):
+    assert model_labels(title) == []
+    assert not english_topic(title, 'Ordinary research without artificial intelligence.')
 
 
 @patch('dailyreport.collect._fetch')

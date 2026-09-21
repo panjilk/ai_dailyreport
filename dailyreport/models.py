@@ -8,12 +8,12 @@ ALIASES = {
     'GLM': ('GLM', '智谱', 'Zhipu', 'Z.ai'),
     'Kimi': ('Kimi', '月之暗面', 'Moonshot'),
     'Qwen': ('Qwen', '通义千问', '千问', '通义'),
-    '豆包': ('豆包', 'Doubao', 'Seed'),
+    '豆包': ('豆包', 'Doubao'),
     'ERNIE': ('ERNIE', '文心一言', '文心'),
     'Hunyuan': ('Hunyuan', '混元'),
-    'MiniMax': ('MiniMax', '稀宇'), '阶跃星辰': ('StepFun', '阶跃星辰', 'Step'),
+    'MiniMax': ('MiniMax', '稀宇'), '阶跃星辰': ('StepFun', '阶跃星辰'),
     'InternLM': ('InternLM', '书生'), '百川': ('Baichuan', '百川'),
-    '零一万物': ('Yi', '零一万物'), '星火': ('讯飞星火', '星火', 'Spark'),
+    '零一万物': ('零一万物',), '星火': ('讯飞星火', '星火'),
     'Llama': ('Llama',), 'Grok': ('Grok',), 'Mistral': ('Mistral',),
 }
 LOOKUP = {alias.casefold(): name for name, aliases in ALIASES.items() for alias in aliases}

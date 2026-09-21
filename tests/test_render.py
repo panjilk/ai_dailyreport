@@ -104,10 +104,52 @@ def test_navigation_uses_model_names():
                                           {'title': '新模型', 'nav_label': 'GLM'}]}) == ['概览', 'ChatGPT', 'GLM', '结束']
 
 
-def test_every_displayed_summary_point_is_in_the_spoken_transcript():
-    from dailyreport.render import canonical_narration
-    story = {'title': '模型正式发布', 'bullets': ['第一项功能。', '第二项功能。', '最后一项限制必须读完。'], 'narration': '旧的半截稿子'}
-    assert canonical_narration(story) == '模型正式发布。第一项功能。第二项功能。最后一项限制必须读完。'
+def test_video_keeps_rich_display_copy_and_reads_complete_short_summary():
+    from dailyreport.render import prepare_video_briefing, build_scene_plan
+    briefing = {'date': '2026-09-19', 'stories': [{
+        'title': '模型正式发布并公布完整能力说明',
+        'bullets': ['第一项功能完整显示。', '第二项功能和限制也完整显示。'],
+        'narration': '原始长稿。', 'category': '模型发布', 'source_name': '示例来源',
+        'source_url': 'https://example.com/news', 'published': '2026-09-19',
+        'video_title': '模型正式发布', 'video_bullets': ['核心能力已经上线，使用时仍需检查结果。'],
+    }]}
+    prepared = prepare_video_briefing(briefing)
+    story = prepared['stories'][0]
+    assert story['title'] == briefing['stories'][0]['title']
+    assert story['bullets'] == briefing['stories'][0]['bullets']
+    assert story['video_narration'] == '模型正式发布。核心能力已经上线，使用时仍需检查结果。'
+    scenes = build_scene_plan(prepared)
+    assert scenes[1]['bullets'] == briefing['stories'][0]['bullets']
+    assert scenes[1]['units'] == [story['video_narration']]
+
+
+def test_english_story_routes_to_english_voice_and_new_scenes_get_lead_in():
+    from dailyreport.render import (remove_tts_cue, scene_lead_in_frames,
+                                    speech_voice, tts_pronunciation_text)
+    jobs = [
+        {'scene': 0, 'speech_language': 'zh-CN'},
+        {'scene': 1, 'speech_language': 'en-US'},
+        {'scene': 1, 'speech_language': 'en-US'},
+    ]
+    assert speech_voice(jobs[0], 'zh-CN-XiaoxiaoNeural', 'en-US-JennyNeural') == 'zh-CN-XiaoxiaoNeural'
+    assert speech_voice(jobs[1], 'zh-CN-XiaoxiaoNeural', 'en-US-JennyNeural') == 'en-US-JennyNeural'
+    assert [scene_lead_in_frames(jobs, i, 1.0) for i in range(3)] == [24, 24, 0]
+    original = 'Grok语音升级，ChatGPT接入Word。'
+    spoken = tts_pronunciation_text(original)
+    assert spoken == 'Grok，语音升级，ChatGPT，接入，Word。'
+    from dailyreport.render import lexical_text
+    assert lexical_text(spoken) == lexical_text(original)
+
+    words = [
+        {'text': '下', 'offset': 950_000, 'duration': 2_600_000},
+        {'text': '一条', 'offset': 3_550_000, 'duration': 3_900_000},
+        {'text': '千问', 'offset': 12_500_000, 'duration': 3_800_000},
+        {'text': '更新', 'offset': 16_300_000, 'duration': 4_500_000},
+    ]
+    content, trim = remove_tts_cue(words)
+    assert [word['text'] for word in content] == ['千问', '更新']
+    assert trim == 0.75
+    assert content[0]['offset'] == 5_000_000
 
 
 def test_speech_verification_rejects_a_missing_final_word():

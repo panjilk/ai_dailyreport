@@ -1,6 +1,10 @@
 {
   "voice": "zh-CN-XiaoxiaoNeural",
-  "speech_rate": 20,
+  "english_voice": "zh-CN-XiaoxiaoNeural",
+  "speech_rate": 10,
+  "speech_pitch_hz": -8,
+  "speech_warmth": true,
+  "scene_lead_in_seconds": 1.0,
   "topic_scope": "all_ai",
   "article_request_budget": 40,
   "sources": [
@@ -8,6 +12,7 @@
       "name": "IT之家",
       "url": "https://www.ithome.com/rss/",
       "ai_only": false,
+      "max_stories": 5,
       "enabled": true
     },
     {
@@ -15,6 +20,25 @@
       "url": "https://www.qbitai.com/feed",
       "type": "rss",
       "ai_only": true,
+      "max_stories": 3,
+      "enabled": true
+    },
+    {
+      "name": "雷峰网",
+      "url": "https://www.leiphone.com/feed",
+      "type": "rss",
+      "ai_only": false,
+      "use_feed_content": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "极客公园",
+      "url": "https://www.geekpark.net/rss",
+      "type": "rss",
+      "ai_only": false,
+      "use_feed_content": true,
+      "max_stories": 2,
       "enabled": true
     },
     {
@@ -22,6 +46,7 @@
       "url": "https://huggingface.co/api/daily_papers",
       "type": "hf_papers",
       "ai_only": true,
+      "max_stories": 2,
       "enabled": true
     },
     {
@@ -29,6 +54,7 @@
       "url": "https://rss.arxiv.org/rss/cs.CL",
       "type": "arxiv",
       "ai_only": true,
+      "max_stories": 2,
       "enabled": true
     },
     {
@@ -36,6 +62,7 @@
       "url": "https://api.github.com/repos/huggingface/transformers/releases?per_page=20",
       "type": "github_releases",
       "ai_only": true,
+      "max_stories": 2,
       "enabled": true
     }
   ]

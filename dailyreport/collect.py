@@ -8,10 +8,10 @@ import re
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import xml.etree.ElementTree as ET
 
-from .recency import yesterday_start, article_event_evidence, news_date
+from .recency import RECENCY_DAYS, window_start, article_event_evidence, news_date
 from .international import source_rows, paper_details, english_topic, english_summary
 from .models import MODEL_NAMES, model_labels
-from .topics import ai_related, news_priority
+from .topics import ai_related, editorial_candidate, news_priority
 
 from bs4 import BeautifulSoup
 import feedparser
@@ -173,7 +173,7 @@ def _canonical(url):
 def select_recent(items: list[dict], now: datetime, hours: int, limit: int, stats=None) -> list[dict]:
     """Newest first; inclusive lower boundary; never infer missing timezones."""
     _validate(now, hours, limit)
-    cutoff = max(now - timedelta(hours=hours), yesterday_start(now))
+    cutoff = max(now - timedelta(hours=hours), window_start(now))
     stats = stats if stats is not None else {}
     for key in ('invalid_metadata', 'outside_window', 'duplicates'):
         stats.setdefault(key, 0)
@@ -433,6 +433,8 @@ def _summary(paragraphs, title):
 def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
     """Fetch enabled sources; fail explicitly if no eligible extract survives."""
     _validate(now, hours, limit)
+    event_cutoff_date = max(now - timedelta(hours=hours), window_start(now)).astimezone(SHANGHAI).date()
+    today = now.astimezone(SHANGHAI).date()
     scope = config.get('topic_scope', 'foundation_models')
     if scope not in ('foundation_models', 'all_ai'):
         raise ValueError('topic_scope must be foundation_models or all_ai')
@@ -442,7 +444,14 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
     stats = dict(feed_entries=0, off_topic=0, source_failures=0,
                  article_requests=0, fetch_failures=0, date_rejected=0,
                  content_rejected=0, summary_rejected=0, selected=0,
-                 article_request_budget=budget)
+                 source_cap_skipped=0, article_request_budget=budget)
+    source_caps = {}
+    for source in config.get('sources', []):
+        cap = source.get('max_stories')
+        if cap is not None:
+            if isinstance(cap, bool) or not isinstance(cap, int) or not 1 <= cap <= 12:
+                raise ValueError('来源 max_stories 必须为1至12的整数')
+            source_caps[source.get('name', 'RSS')] = cap
     rows, errors = [], []
     for source in config.get('sources', []):
         if not source.get('enabled', True):
@@ -466,6 +475,9 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                 stats['feed_entries'] += 1
                 title = BeautifulSoup(entry.get('title', ''), 'html.parser').get_text(' ', strip=True)
                 description = BeautifulSoup(entry.get('summary', ''), 'html.parser').get_text(' ', strip=True)
+                if not editorial_candidate(title):
+                    stats['off_topic'] += 1
+                    continue
                 if scope == 'foundation_models' and not _model_topic(title):
                     stats['off_topic'] += 1
                     continue
@@ -474,21 +486,38 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                     stats['off_topic'] += 1
                     continue
                 # Atom may only provide updated; event evidence is still mandatory.
-                rows.append(dict(title=title, source_name=name, source_url=entry.get('link', ''), published=entry.get('published') or entry.get('updated')))
+                row = dict(title=title, source_name=name, source_url=entry.get('link', ''),
+                           published=entry.get('published') or entry.get('updated'))
+                if source.get('use_feed_content'):
+                    content_blocks = entry.get('content') or []
+                    embedded = content_blocks[0].get('value', '') if content_blocks else entry.get('summary', '')
+                    if embedded:
+                        row['feed_content'] = embedded
+                rows.append(row)
         except (requests.RequestException, OSError, ValueError, ET.ParseError) as exc:
             stats['source_failures'] += 1
             errors.append(f'{name} ({url}): {exc}')
-    # Scan the complete eligible pool until enough usable stories or budget exhaustion.
+    # Scan the complete eligible pool; an exhausted article budget only blocks
+    # candidates that actually require another request.
     candidates = select_recent(rows, now, hours, max(1, len(rows)), stats)
     if scope == 'all_ai':
         candidates.sort(key=news_priority)  # Stable: newest first within each priority.
     stats['eligible_candidates'] = len(candidates)
-    stories = []
-    processed = 0
-    for row in candidates:
-        if stats['article_requests'] >= budget:
-            break
-        processed += 1
+    selected_stories = []
+    source_selected = {}
+    considered, attempted, budget_blocked = set(), set(), set()
+
+    def needs_article_request(row):
+        return row.get('content_kind') == 'paper' or (
+            not row.get('content_kind') and not row.get('feed_content'))
+
+    def process_candidate(index, row):
+        """Try one candidate exactly once and retain its global ranking index."""
+        if index in attempted:
+            return
+        attempted.add(index)
+        considered.add(index)
+        source_name = row['source_name']
         stage = 'content_rejected'
         try:
             if row.get('content_kind'):
@@ -504,7 +533,7 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                     event = {k: row[k] for k in ('event_date', 'event_date_evidence')}
                 stage = 'date_rejected'
                 moment = _date(event['event_date'])
-                if moment is None or not max(now - timedelta(hours=hours), yesterday_start(now)) <= moment <= now:
+                if moment is None or not max(now - timedelta(hours=hours), window_start(now)) <= moment <= now:
                     raise ValueError('论文首次提交或正式版本发布日期不在本次搜查窗口内')
                 stage = 'summary_rejected'
                 bullets = english_summary(original, kind)
@@ -512,19 +541,22 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                 from .render import single_page_layout
                 single_page_layout({'bullets': bullets})
                 narration = _spoken_title(row['title']) + ''.join(bullets)
-                stories.append(dict(row, **{k: v for k, v in event.items() if k not in row},
-                                    id=hashlib.sha256(row['source_url'].encode()).hexdigest()[:16],
-                                    category='技术洞察' if kind == 'paper' else '开发生态',
-                                    nav_label='论文' if kind == 'paper' else '模型工具',
-                                    bullets=bullets, narration=narration, evidence=original,
-                                    verification='english_source_extract', language='en', source_text=original))
-                if len(stories) >= limit:
-                    break
-                continue
+                story = dict(row, **{k: v for k, v in event.items() if k not in row},
+                             id=hashlib.sha256(row['source_url'].encode()).hexdigest()[:16],
+                             category='技术洞察' if kind == 'paper' else '开发生态',
+                             nav_label='论文' if kind == 'paper' else '模型工具',
+                             bullets=bullets, narration=narration, evidence=original,
+                             verification='english_source_extract', language='en', source_text=original)
+                selected_stories.append((index, story))
+                source_selected[source_name] = source_selected.get(source_name, 0) + 1
+                return
             _reject_debunk(row['title'])
-            stage = 'fetch_failures'
-            stats['article_requests'] += 1
-            content = _fetch(row['source_url'])
+            if row.get('feed_content'):
+                content = '<article>' + row['feed_content'] + '</article>'
+            else:
+                stage = 'fetch_failures'
+                stats['article_requests'] += 1
+                content = _fetch(row['source_url'])
             stage = 'content_rejected'
             paragraphs = extract_paragraphs(content)
             if not paragraphs:
@@ -532,26 +564,57 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
             stage = 'date_rejected'
             event = article_event_evidence('\n'.join(paragraphs), row['published'], row['title'], scope=scope)
             event_date = event['event_date']
-            if not yesterday_start(now).date() <= news_date(event_date) <= now.astimezone(SHANGHAI).date():
-                raise ValueError('新闻事件早于昨天或尚未发生，不能用新转载日期替代事件日期')
+            if not event_cutoff_date <= news_date(event_date) <= today:
+                raise ValueError('新闻事件早于本次搜查截止日期或尚未发生，不能用新转载日期替代事件日期')
             stage = 'summary_rejected'
             bullets, narration = _summary(paragraphs, row['title'])
-            stories.append(dict(row, id=hashlib.sha256(row['source_url'].encode()).hexdigest()[:16],
-                                **event, category=classify(row['title'], narration), nav_label=_nav_label(row['title']) if MODEL_NAMES.search(row['title']) or scope == 'foundation_models' else classify(row['title'], narration), bullets=bullets, narration=narration,
-                                evidence=''.join(bullets), verification='extractive',
-                                source_text='\n'.join(paragraphs)))
+            public_row = {k: v for k, v in row.items() if k != 'feed_content'}
+            story = dict(public_row, id=hashlib.sha256(row['source_url'].encode()).hexdigest()[:16],
+                         **event, category=classify(row['title'], narration), nav_label=_nav_label(row['title']) if MODEL_NAMES.search(row['title']) or scope == 'foundation_models' else classify(row['title'], narration), bullets=bullets, narration=narration,
+                         evidence=''.join(bullets), verification='extractive',
+                         source_text='\n'.join(paragraphs))
+            selected_stories.append((index, story))
+            source_selected[source_name] = source_selected.get(source_name, 0) + 1
         except (requests.RequestException, OSError, ValueError) as exc:
             stats[stage] += 1
             errors.append(f"{row['source_name']} ({row['source_url']}): {exc}")
-        if len(stories) >= limit:
+
+    deferred = []
+    for index, row in enumerate(candidates):
+        if len(selected_stories) >= limit:
             break
+        source_name = row['source_name']
+        cap = source_caps.get(source_name)
+        if cap is not None and source_selected.get(source_name, 0) >= cap:
+            considered.add(index)
+            deferred.append((index, row))
+            stats['source_cap_skipped'] += 1
+            continue
+        if needs_article_request(row) and stats['article_requests'] >= budget:
+            budget_blocked.add(index)
+            continue
+        process_candidate(index, row)
+
+    # Source caps are a diversity preference. If the capped first pass cannot
+    # fill the edition, retry only the deferred candidates in their original
+    # global ranking order, without processing any candidate twice.
+    if len(selected_stories) < limit:
+        for index, row in deferred:
+            if len(selected_stories) >= limit:
+                break
+            if needs_article_request(row) and stats['article_requests'] >= budget:
+                budget_blocked.add(index)
+                continue
+            process_candidate(index, row)
+
+    stories = [story for _, story in sorted(selected_stories, key=lambda pair: pair[0])]
     stats['selected'] = len(stories)
-    stats['unexamined_candidates'] = len(candidates) - processed
-    stats['budget_exhausted'] = stats['article_requests'] >= budget and processed < len(candidates) and len(stories) < limit
+    stats['unexamined_candidates'] = len(candidates) - len(considered)
+    stats['budget_exhausted'] = bool(budget_blocked) and len(stories) < limit
     if not stories:
         raise RuntimeError('没有可用资讯：指定窗口内无符合条件且正文可抽取的文章。筛选统计：' + str(stats) + '；'.join(errors))
     date = now.astimezone(SHANGHAI).date().isoformat()
-    return dict(date=date, window_days=2,
+    return dict(date=date, window_days=RECENCY_DAYS,
                 title=f'AI 日报 · {date}',
-                edition_note=f'仅北京时间今天和昨天；大模型迭代优先，其次用量与订阅调整，再收录其他AI新闻；同优先级新消息优先，不以旧闻补足条数；中英文原文机器抽取的完整要点摘要，未经人工核验；英文保留原文；论文结果为作者报告；保留来源提供的时区日期。',
+                edition_note=f'仅北京时间最近{RECENCY_DAYS}天；热点消息优先，同一热点等级按发布时间从新到旧；不以窗口外旧闻补足条数；中英文原文机器抽取的完整要点摘要，未经人工核验；英文保留原文；论文结果为作者报告；保留来源提供的时区日期。',
                 stories=stories, collection_errors=errors, collection_stats=stats)

@@ -141,7 +141,7 @@ def navigation_labels(briefing):
 
 
 def prepare_video_briefing(briefing):
-    """Keep the full written report; use separate concise video copy."""
+    """Keep rich on-screen notes and prepare a shorter complete narration."""
     result = deepcopy(briefing)
     for story in result['stories']:
         title = story.get('video_title') or re.split(r'[，：:]', story['title'], maxsplit=1)[0]
@@ -157,19 +157,26 @@ def prepare_video_briefing(briefing):
             bullets = candidates[:1]
             if not bullets:
                 raise ValueError('请为这条新闻填写约40至60字的 video_title 和 video_bullets：' + story['title'])
-        story['title'], story['bullets'] = title, bullets
-        story['narration'] = canonical_narration(story)
-        if re.search(r'https?://|来源|据.{0,20}(?:报道|消息)', story['narration']) or story['source_name'] in story['narration']:
+        if not isinstance(bullets, list) or not bullets or not all(isinstance(x, str) and x.strip() for x in bullets):
+            raise ValueError('video_bullets 必须是非空文字数组：' + story['title'])
+        video_story = {'title': title, 'bullets': bullets}
+        story['video_narration'] = canonical_narration(video_story)
+        if re.search(r'https?://|来源|据.{0,20}(?:报道|消息)', story['video_narration']) or story['source_name'] in story['video_narration']:
             raise ValueError('视频短稿仍包含新闻来源，请编辑 video_title/video_bullets：' + title)
-        if len(story['narration']) > 100:
+        if len(story['video_narration']) > 100:
             raise ValueError('视频短稿过长，请精简到约40至60字：' + title)
     return result
 
 
 def window_label(briefing):
-    if briefing.get('recency_policy') == 'today_and_yesterday_only':
+    if briefing.get('window_start') and briefing.get('window_end'):
+        start = datetime.fromisoformat(str(briefing['window_start']).replace('Z', '+00:00')).astimezone(SHANGHAI)
+        end = datetime.fromisoformat(str(briefing['window_end']).replace('Z', '+00:00')).astimezone(SHANGHAI)
+        return f'搜查窗口：{start:%Y年%m月%d日 %H:%M} — {end:%m月%d日 %H:%M}（北京时间）'
+    if briefing.get('recency_policy') in ('today_and_yesterday_only', 'recent_days_only'):
         today = date.fromisoformat(briefing.get('search_date', briefing['date']))
-        return f'搜查窗口：{today - timedelta(days=1):%Y年%m月%d日} — {today:%m月%d日}（北京时间）'
+        days = max(1, int(briefing.get('window_days', 5)))
+        return f'搜查窗口：{today - timedelta(days=days - 1):%Y年%m月%d日} — {today:%m月%d日}（北京时间）'
     if briefing.get('window_hours'):
         return f"采集窗口：最近 {briefing['window_hours']} 小时"
     end = date.fromisoformat(briefing['date'])
@@ -222,7 +229,7 @@ def overview_image(briefing):
         color = COLORS[i % len(COLORS)]
         d.rounded_rectangle((x, y, x + cw - 24, y + ch - 20), radius=24, fill='white')
         fitted(d, story.get('nav_label', story['category']), (x + 28, y + 24), cw - 80, 1, 32, fill=color, bold=True)
-        fitted(d, story['title'], (x + 28, y + (76 if rows >= 3 else 87)),
+        fitted(d, story.get('display_title') or story['title'], (x + 28, y + (76 if rows >= 3 else 87)),
                cw - 80, 2 if rows >= 3 else 3, 22 if rows >= 3 else 26,
                leading=1.2 if rows >= 3 else 1.4)
     return im
@@ -237,7 +244,7 @@ def story_image(briefing, story, index, bullets=None, page_no=1, page_total=1):
     d.text((132, 237), f"{index:02} / {len(briefing['stories']):02}   ·   " + story.get('nav_label', story['category']), font=font(25, True), fill=color)
     displayed_date = news_date(story.get('event_date', story['published'])).isoformat()
     d.text((1780, 240), '事件日期 ' + displayed_date, anchor='rt', font=font(22), fill=MUTED)
-    fitted(d, story['title'], (130, 290), 1640, 1, 54, bold=True)
+    fitted(d, story.get('display_title') or story['title'], (130, 290), 1640, 1, 54, bold=True)
     size, lines = single_page_layout(story)
     y = 400
     for part in lines:
@@ -309,14 +316,40 @@ def lexical_text(text):
     return re.sub(r'[\W_]+', '', unescape(text), flags=re.UNICODE).casefold()
 
 
-def verify_word_coverage(text, words, duration):
+TTS_CUE = '下一条。'
+TTS_PREROLL_SECONDS = 0.5
+
+
+def verify_word_coverage(text, words, duration, min_preroll=0):
     expected = lexical_text(text)
     actual = lexical_text(''.join(word['text'] for word in words))
     if not words or expected != actual:
         raise ValueError('配音没有完整覆盖稿件文字，停止交付以防漏读。')
+    first_word_start = words[0]['offset'] / 10_000_000
+    if first_word_start + 0.01 < min_preroll:
+        raise ValueError('配音首词前没有足够的起声缓冲，停止交付以防漏读。')
     final_word_end = (words[-1]['offset'] + words[-1]['duration']) / 10_000_000
     if final_word_end > duration + 0.12:
         raise ValueError('音频在最后一个词结束前截断。')
+
+
+def remove_tts_cue(words, cue=TTS_CUE, preroll_seconds=TTS_PREROLL_SECONDS):
+    """Remove an audible synthesis cue while retaining safe audio before the real first word."""
+    cue_text = lexical_text(cue)
+    consumed = ''
+    boundary = 0
+    while boundary < len(words) and len(consumed) < len(cue_text):
+        consumed += lexical_text(words[boundary]['text'])
+        boundary += 1
+    if consumed != cue_text or boundary >= len(words):
+        raise ValueError('无法从配音中定位起声提示词。')
+    content_words = [dict(word) for word in words[boundary:]]
+    first_word_start = content_words[0]['offset'] / 10_000_000
+    trim_seconds = max(0, first_word_start - preroll_seconds)
+    shift = round(trim_seconds * 10_000_000)
+    for word in content_words:
+        word['offset'] = max(0, word['offset'] - shift)
+    return content_words, trim_seconds
 
 
 def subtitle_cues(text, words, total_frames):
@@ -342,7 +375,29 @@ def subtitle_cues(text, words, total_frames):
     return result
 
 
-async def edge_speech(jobs, voice, rate=20):
+def speech_voice(job, chinese_voice, english_voice):
+    language = str(job.get('speech_language', '')).lower()
+    return english_voice if language.startswith('en') else chinese_voice
+
+
+def tts_pronunciation_text(text):
+    """Add TTS-only boundaries at script changes while preserving every word."""
+    english_run = r'([A-Za-z][A-Za-z0-9.+/_-]*(?:[ \t]+[A-Za-z0-9][A-Za-z0-9.+/_-]*)*)'
+    text = re.sub(english_run + r'\s*(?=[\u4e00-\u9fff])', r'\1，', text)
+    return re.sub(r'(?<=[\u4e00-\u9fff])\s*(?=[A-Za-z])', '，', text)
+
+
+def scene_lead_in_frames(jobs, index, seconds):
+    """Give a new visual scene time to settle before its first spoken word."""
+    if seconds <= 0:
+        return 0
+    if index and jobs[index - 1]['scene'] == jobs[index]['scene']:
+        return 0
+    return math.ceil(seconds * 24)
+
+
+async def edge_speech(jobs, voice, rate=20, pitch_hz=0, warm=False,
+                      english_voice='zh-CN-XiaoxiaoNeural'):
     import edge_tts
     semaphore = asyncio.Semaphore(2)
 
@@ -352,17 +407,39 @@ async def edge_speech(jobs, voice, rate=20):
             mp3 = target.with_suffix('.mp3')
             async def request():
                 words = []
-                communicate = edge_tts.Communicate(job['text'], voice, rate=f'{rate:+d}%', boundary='WordBoundary')
+                job_voice = speech_voice(job, voice, english_voice)
+                job_pitch = 0 if job_voice == english_voice and english_voice != voice else pitch_hz
+                spoken_text = tts_pronunciation_text(job['text'])
+                job['tts_text'] = spoken_text
+                # A spoken cue gives the neural voice real acoustic context before
+                # the first news word. It is removed after synthesis while 500 ms
+                # of its following pause is retained as protected preroll.
+                request_text = TTS_CUE + spoken_text
+                communicate = edge_tts.Communicate(
+                    request_text, job_voice, rate=f'{rate:+d}%', pitch=f'{job_pitch:+d}Hz',
+                    boundary='WordBoundary')
                 with mp3.open('wb') as writer:
                     async for event in communicate.stream():
                         if event['type'] == 'audio':
                             writer.write(event['data'])
                         elif event['type'] == 'WordBoundary':
                             words.append(event)
-                run_ffmpeg(['-i', str(mp3), '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', str(target)])
+                words, trim_seconds = remove_tts_cue(words)
+                filters = [f'atrim=start={trim_seconds:.6f}', 'asetpts=PTS-STARTPTS']
+                if warm:
+                    filters += ['highpass=f=62',
+                                'equalizer=f=170:t=q:w=1:g=1.7',
+                                'equalizer=f=4900:t=q:w=1:g=-1.4',
+                                'acompressor=threshold=0.11:ratio=1.6:attack=30:release=210:makeup=1.12',
+                                'loudnorm=I=-17:TP=-1.5:LRA=7']
+                conversion = ['-i', str(mp3), '-ar', '24000', '-ac', '1',
+                              '-af', ','.join(filters)]
+                conversion += ['-c:a', 'pcm_s16le', str(target)]
+                run_ffmpeg(conversion)
                 with wave.open(str(target)) as reader:
                     duration = reader.getnframes() / reader.getframerate()
-                verify_word_coverage(job['text'], words, duration)
+                verify_word_coverage(spoken_text, words, duration, TTS_PREROLL_SECONDS)
+                job['tts_preroll_seconds'] = TTS_PREROLL_SECONDS
                 target.with_suffix('.words.json').write_text(json.dumps(words, ensure_ascii=False), encoding='utf-8')
             async def bounded_request():
                 return await asyncio.wait_for(request(), 65)
@@ -372,11 +449,15 @@ async def edge_speech(jobs, voice, rate=20):
     await asyncio.gather(*(one(job) for job in jobs[1:]))
 
 
-def synthesize(jobs, directory, voice, engine, rate=20):
+def synthesize(jobs, directory, voice, engine, rate=20, pitch_hz=0, warm=False,
+               english_voice='zh-CN-XiaoxiaoNeural'):
     if engine in ('auto', 'edge'):
         try:
-            asyncio.run(edge_speech(jobs, voice, rate))
-            return f'Edge TTS / {voice} / {rate:+d}%'
+            asyncio.run(edge_speech(jobs, voice, rate, pitch_hz, warm, english_voice))
+            tone = ' / warm' if warm else ''
+            uses_english = any(str(job.get('speech_language', '')).lower().startswith('en') for job in jobs)
+            bilingual = f' / English {english_voice}' if uses_english and english_voice != voice else ''
+            return f'Edge TTS / {voice} / {rate:+d}% / {pitch_hz:+d}Hz{tone}{bilingual}'
         except Exception as exc:
             if engine == 'edge':
                 raise RuntimeError(f'联网中文配音失败（{type(exc).__name__}: {exc}）。可使用 --tts sapi 选择 Windows 本地语音。') from exc
@@ -402,31 +483,42 @@ def synthesize(jobs, directory, voice, engine, rate=20):
 def build_scene_plan(briefing):
     count = len(briefing['stories'])
     intro = f'AI快报，本期{count}条消息。'
-    scenes = [{'image': overview_image(briefing), 'units': [intro], 'label': '资讯概览', 'chapter': 0, 'bullets': []}]
+    scenes = [{'image': overview_image(briefing), 'units': [intro], 'label': '资讯概览',
+               'chapter': 0, 'bullets': [], 'speech_language': 'zh-CN'}]
     for i, story in enumerate(briefing['stories'], 1):
         pages = paginate_story(story)
         if ''.join(part for page in pages for part in page) != ''.join(story['bullets']):
             raise ValueError('摘要分页没有完整覆盖原稿。')
         for p, bullets in enumerate(pages):
-            units = [canonical_narration(story)]
+            units = [story['video_narration']] if p == 0 else []
             scenes.append({'image': story_image(briefing, story, i, bullets, p + 1, len(pages)),
                            'units': units, 'label': story['title'], 'chapter': i,
-                           'page': p + 1, 'page_count': len(pages), 'bullets': bullets})
+                           'page': p + 1, 'page_count': len(pages), 'bullets': bullets,
+                           'speech_language': story.get('speech_language') or
+                                              story.get('summary_language') or
+                                              story.get('language') or 'zh-CN'})
         actual = ''.join(text for scene in scenes if scene['chapter'] == i for text in scene['units'])
-        if actual != canonical_narration(story):
-            raise ValueError('资讯口播未完整覆盖标题和全部摘要。')
+        if actual != story['video_narration']:
+            raise ValueError('资讯口播没有完整覆盖视频总结。')
     outro = '本期播报结束，下期再见。'
-    scenes.append({'image': outro_image(briefing), 'units': [outro], 'label': '结束', 'chapter': count + 1, 'bullets': []})
+    scenes.append({'image': outro_image(briefing), 'units': [outro], 'label': '结束',
+                   'chapter': count + 1, 'bullets': [], 'speech_language': 'zh-CN'})
     return scenes
 
 
-def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='auto', rate=20, *, search_time=None) -> Path:
+def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='auto', rate=10,
+           *, pitch_hz=-8, warm=True, english_voice='zh-CN-XiaoxiaoNeural',
+           scene_lead_in_seconds=1.0, search_time=None) -> Path:
     briefing = prepare_briefing(briefing)
     validate_briefing(briefing)
     enforce_recency(briefing, search_time or datetime.now(SHANGHAI))
     briefing = prepare_video_briefing(briefing)
     if not isinstance(rate, int) or not -10 <= rate <= 60:
         raise ValueError('语速 rate 必须为 -10 至 60 的整数。')
+    if isinstance(pitch_hz, bool) or not isinstance(pitch_hz, int) or not -20 <= pitch_hz <= 20:
+        raise ValueError('音高 pitch_hz 必须为 -20 至 20 的整数。')
+    if isinstance(scene_lead_in_seconds, bool) or not isinstance(scene_lead_in_seconds, (int, float)) or not 0 <= scene_lead_in_seconds <= 2:
+        raise ValueError('场景开口缓冲必须为0至2秒。')
     output = Path(output).resolve()
     output.mkdir(parents=True, exist_ok=True)
     work = output / 'assets'
@@ -447,30 +539,11 @@ def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='a
         for sentence in scene['units']:
             number = len(jobs)
             path = work / f'speech-{number:03}.wav'
-            jobs.append({'text': sentence, 'path': str(path), 'scene': i, 'chapter': scene['chapter']})
+            jobs.append({'text': sentence, 'path': str(path), 'scene': i,
+                         'chapter': scene['chapter'],
+                         'speech_language': scene.get('speech_language', 'zh-CN')})
     print(f'正在以 {rate:+d}% 语速生成 {len(jobs)} 段完整口播……', flush=True)
-    engine_used = synthesize(jobs, work, voice, engine, rate)
-    # Fit complete short narration to 9.7 seconds plus a 0.3 second scene pause.
-    for job in jobs:
-        if not 1 <= job['chapter'] <= count:
-            continue
-        path = Path(job['path'])
-        with wave.open(str(path)) as reader:
-            duration = reader.getnframes() / reader.getframerate()
-        factor = duration / 9.7
-        if not 0.65 <= factor <= 1.5:
-            raise ValueError(f'短稿配音为{duration:.1f}秒，无法自然调整到约10秒，请重新精简或补充短稿。')
-        normalized = path.with_name(path.stem + '-timed.wav')
-        run_ffmpeg(['-i', str(path), '-af', f'atempo={factor:.9f},apad,atrim=duration=9.7',
-                    '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', str(normalized)])
-        normalized.replace(path)
-        word_path = path.with_suffix('.words.json')
-        if word_path.exists():
-            words = json.loads(word_path.read_text('utf-8'))
-            for word in words:
-                word['offset'] = round(word['offset'] / factor)
-                word['duration'] = round(word['duration'] / factor)
-            word_path.write_text(json.dumps(words, ensure_ascii=False), encoding='utf-8')
+    engine_used = synthesize(jobs, work, voice, engine, rate, pitch_hz, warm, english_voice)
     print(f'配音完成：{engine_used}', flush=True)
     cursor_frames, srt, concat, timeline, speech_units = 0, [], ['ffconcat version 1.0'], [], []
     combined = output / 'narration.wav'
@@ -489,20 +562,36 @@ def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='a
             words = json.loads(word_file.read_text('utf-8')) if word_file.exists() else []
             if engine_used.startswith('Edge'):
                 verify_word_coverage(job['text'], words, audio_duration)
+            # Show each new page before speech begins so players and Bluetooth
+            # devices cannot mask the first syllable during the visual change.
+            lead_frames = scene_lead_in_frames(jobs, n, scene_lead_in_seconds)
+            lead_samples = lead_frames * 1000
+            if lead_frames:
+                number = len(timeline)
+                start, end = cursor_frames / 24, (cursor_frames + lead_frames) / 24
+                image_path = work / f'frame-{number:03}.png'
+                scenes[job['scene']]['image'].save(image_path)
+                concat += [f"file 'frame-{number:03}.png'", 'option framerate 24',
+                           f'duration {lead_frames / 24:.9f}']
+                timeline.append({'start': round(start, 4), 'end': round(end, 4),
+                                 'scene': job['scene'], 'chapter': job['chapter'],
+                                 'unit': n, 'text': '', 'lead_in': True})
             # Full audio determines the page's lifetime. No fixed per-story cap.
             pause = 0.08 if n + 1 < len(jobs) and jobs[n + 1]['scene'] == job['scene'] else 0.3
             if n == len(jobs) - 1:
                 pause = 0.6
             target_samples = math.ceil((samples + pause * 24000) / 1000) * 1000
             unit_frames = target_samples // 1000
-            writer.writeframes(frames + b'\0' * ((target_samples - samples) * 2))
+            writer.writeframes(b'\0' * (lead_samples * 2) + frames +
+                               b'\0' * ((target_samples - samples) * 2))
             cues = subtitle_cues(job['text'], words, unit_frames)
             if ''.join(c['text'] for c in cues) != job['text']:
                 raise ValueError('字幕没有完整覆盖口播。')
             for cue in cues:
                 number = len(timeline)
-                start, end = (cursor_frames + cue['start_frame']) / 24, (cursor_frames + cue['end_frame']) / 24
-                srt.append(f'{number + 1}\n{srt_time(start)} --> {srt_time(end)}\n{cue["text"]}\n')
+                start = (cursor_frames + lead_frames + cue['start_frame']) / 24
+                end = (cursor_frames + lead_frames + cue['end_frame']) / 24
+                srt.append(f'{len(srt) + 1}\n{srt_time(start)} --> {srt_time(end)}\n{cue["text"]}\n')
                 image_path = work / f'frame-{number:03}.png'
                 frame_with_subtitle(scenes[job['scene']]['image'], cue['text'], n + 1, len(jobs), job['chapter'], count, navigation_labels(briefing)).save(image_path)
                 concat += [f"file 'frame-{number:03}.png'", 'option framerate 24', f'duration {(cue["end_frame"] - cue["start_frame"]) / 24:.9f}']
@@ -510,10 +599,14 @@ def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='a
                                  'chapter': job['chapter'], 'unit': n, 'text': cue['text']})
             speech_units.append({'text': job['text'], 'scene': job['scene'], 'chapter': job['chapter'],
                                  'start': round(cursor_frames / 24, 4),
-                                 'audio_end': round(cursor_frames / 24 + audio_duration, 4),
-                                 'end': round((cursor_frames + unit_frames) / 24, 4),
-                                 'coverage': 'word-boundary-verified' if words else 'sapi-synchronous-completion'})
-            cursor_frames += unit_frames
+                                 'audio_start': round((cursor_frames + lead_frames) / 24, 4),
+                                 'audio_end': round((cursor_frames + lead_frames) / 24 + audio_duration, 4),
+                                 'end': round((cursor_frames + lead_frames + unit_frames) / 24, 4),
+                                  'speech_language': job.get('speech_language', 'zh-CN'),
+                                  'tts_text': job.get('tts_text', job['text']),
+                                  'tts_preroll_seconds': job.get('tts_preroll_seconds', 0),
+                                  'coverage': 'word-boundary-verified' if words else 'sapi-synchronous-completion'})
+            cursor_frames += lead_frames + unit_frames
     cursor = cursor_frames / 24
     concat += [f"file 'frame-{len(timeline) - 1:03}.png'", 'option framerate 24']
     (work / 'frames.ffconcat').write_text('\n'.join(concat) + '\n', encoding='utf-8')
@@ -524,7 +617,10 @@ def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='a
               'start': next(t['start'] for t in timeline if t['scene'] == i),
               'end': next(t['end'] for t in reversed(timeline) if t['scene'] == i)} for i, scene in enumerate(scenes)]
     manifest = {'duration_seconds': round(cursor, 3), 'width': W, 'height': H, 'fps': 24,
-                'speech_engine': engine_used, 'speech_rate_percent': rate, 'navigation_labels': navigation_labels(briefing), 'segments': timeline,
+                'speech_engine': engine_used, 'speech_rate_percent': rate,
+                'speech_pitch_hz': pitch_hz, 'speech_warmth': bool(warm),
+                'english_voice': english_voice, 'scene_lead_in_seconds': scene_lead_in_seconds,
+                'navigation_labels': navigation_labels(briefing), 'segments': timeline,
                 'speech_units': speech_units, 'chapters': chapters, 'pages': pages}
     (output / 'timeline.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding='utf-8')
     target = output / 'daily.mp4'
