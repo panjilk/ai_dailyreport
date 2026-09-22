@@ -121,6 +121,7 @@ def main(argv=None):
         else:
             print(f'正在采集最近 {args.hours} 小时的 AI 新闻……', flush=True)
             briefing = collect(config, now, args.hours, args.limit)
+        briefing.setdefault('edition_start_date', config.get('edition_start_date', briefing['date']))
         briefing = prepare_briefing(briefing)
         validate_briefing(briefing)
         enforce_recency(briefing, now, args.hours)
@@ -134,7 +135,10 @@ def main(argv=None):
                    pitch_hz=args.pitch if args.pitch is not None else config.get('speech_pitch_hz', -8),
                    warm=config.get('speech_warmth', True),
                    english_voice=config.get('english_voice', 'zh-CN-XiaoxiaoNeural'),
-                   scene_lead_in_seconds=config.get('scene_lead_in_seconds', 1.0), search_time=now)
+                   scene_lead_in_seconds=config.get('scene_lead_in_seconds', 1.0),
+                   background_music_volume=config.get('background_music_volume', 0.42),
+                   transition_click_volume=config.get('transition_click_volume', 0.32),
+                   search_time=now)
         write_preview(briefing, output)
         print(f'完成：{output / "index.html"}', flush=True)
         if args.open and os.name == 'nt':

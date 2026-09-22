@@ -9,7 +9,8 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import xml.etree.ElementTree as ET
 
 from .recency import RECENCY_DAYS, window_start, article_event_evidence, news_date
-from .international import source_rows, paper_details, english_topic, english_summary
+from .international import (english_blog_candidate, english_summary, english_topic,
+                            paper_details, source_rows, translate_to_chinese)
 from .models import MODEL_NAMES, model_labels
 from .topics import ai_related, editorial_candidate, news_priority
 
@@ -65,14 +66,29 @@ def _model_topic(title):
     return True
 
 
-def _nav_label(title):
+SOURCE_NAV_LABELS = {
+    'OpenAI News': 'OpenAI', 'Google DeepMind': 'Gemini',
+    'Hugging Face Blog': 'Hugging Face', 'NVIDIA Blog': 'NVIDIA',
+    'TechCrunch AI': 'AI行业', 'Simon Willison': 'LLM工具',
+    'Gary Marcus': 'AI观点', 'Dwarkesh Patel': 'AI观点',
+    'Gwern': 'AI观点', 'Max Woolf': 'AI观点', 'Giles Thomas': 'AI观点',
+    'Sean Goedecke': 'AI观点', 'Martin Alderson': 'AI观点',
+    "Where's Your Ed At": 'AI观点', 'LCamtuf': 'AI安全',
+}
+
+
+def _nav_label(title, source_name=''):
     names = model_labels(title)
+    # Prefer the concrete model family when a company and its model appear
+    # together, while keeping a company label for OpenAI-only announcements.
+    if 'OpenAI' in names and ('GPT' in names or 'ChatGPT' in names):
+        names.remove('OpenAI')
     if len(names) >= 3:
         return '多模型对比'
     label = ' / '.join(names)
     if len(names) == 2 and sum(2 if '\u4e00' <= c <= '\u9fff' else 1 for c in label) > 12:
         return '模型对比'
-    return label if names else '基础模型'
+    return label if names else SOURCE_NAV_LABELS.get(source_name, '基础模型')
 
 
 def classify(title: str, narration: str) -> str:
@@ -459,10 +475,15 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
         name, url = source.get('name', 'RSS'), source.get('url', '')
         try:
             content = _fetch(url)
-            if source.get('type') in ('hf_papers', 'arxiv', 'github_releases'):
+            if source.get('type') in ('hf_papers', 'arxiv', 'github_releases', 'english_rss'):
                 for row in source_rows(source, content):
                     stats['feed_entries'] += 1
                     if scope == 'foundation_models' and not english_topic(row['title'], row['abstract']):
+                        stats['off_topic'] += 1
+                        continue
+                    if (scope == 'all_ai' and source.get('type') == 'english_rss'
+                            and not source.get('ai_only', False)
+                            and not english_blog_candidate(row['title'], row['abstract'])):
                         stats['off_topic'] += 1
                         continue
                     rows.append(dict(row, source_name=name))
@@ -536,17 +557,30 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                 if moment is None or not max(now - timedelta(hours=hours), window_start(now)) <= moment <= now:
                     raise ValueError('论文首次提交或正式版本发布日期不在本次搜查窗口内')
                 stage = 'summary_rejected'
-                bullets = english_summary(original, kind)
+                source_bullets = english_summary(original, kind)
+                display_title = translate_to_chinese(row['title'])
+                bullets = [translate_to_chinese(bullet) if re.search(r'[A-Za-z]', bullet) else bullet
+                           for bullet in source_bullets]
                 # Reject an oversized extract before it can fail the whole video.
                 from .render import single_page_layout
                 single_page_layout({'bullets': bullets})
-                narration = _spoken_title(row['title']) + ''.join(bullets)
-                story = dict(row, **{k: v for k, v in event.items() if k not in row},
+                narration = _spoken_title(display_title) + ''.join(bullets)
+                category = ('要闻' if kind == 'official_article' else
+                            '技术洞察' if kind in ('paper', 'article') else '开发生态')
+                nav_text = ' '.join((row.get('title', ''), row.get('abstract', ''),
+                                     row.get('source_name', '')))
+                nav_label = _nav_label(nav_text, row.get('source_name', ''))
+                if nav_label == '基础模型':
+                    nav_label = ('论文' if kind == 'paper' else
+                                 '官方' if kind == 'official_article' else
+                                 '模型工具')
+                story = dict(row, title=display_title, source_title=row['title'],
+                             **{k: v for k, v in event.items() if k not in row},
                              id=hashlib.sha256(row['source_url'].encode()).hexdigest()[:16],
-                             category='技术洞察' if kind == 'paper' else '开发生态',
-                             nav_label='论文' if kind == 'paper' else '模型工具',
-                             bullets=bullets, narration=narration, evidence=original,
-                             verification='english_source_extract', language='en', source_text=original)
+                             category=category, nav_label=nav_label,
+                             bullets=bullets, narration=narration, evidence=''.join(bullets),
+                             verification='machine_translated_english_source', language='zh',
+                             source_language='en', source_text=original)
                 selected_stories.append((index, story))
                 source_selected[source_name] = source_selected.get(source_name, 0) + 1
                 return

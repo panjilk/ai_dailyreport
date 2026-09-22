@@ -79,6 +79,23 @@ def test_persistent_speech_failure_does_not_loop_forever():
     assert len(attempts) == 3
 
 
+def test_generated_music_and_transition_clicks_are_quiet_mono_wav(tmp_path):
+    from array import array
+    import wave
+    from dailyreport.render import generate_background_music, generate_transition_clicks
+    music = tmp_path / 'music.wav'
+    clicks = tmp_path / 'clicks.wav'
+    generate_background_music(music, 1.5)
+    generate_transition_clicks(clicks, 1.5, [0.5, 1.0])
+    for path in (music, clicks):
+        with wave.open(str(path), 'rb') as reader:
+            assert (reader.getnchannels(), reader.getsampwidth(), reader.getframerate()) == (1, 2, 24000)
+            assert reader.getnframes() == 36000
+            samples = array('h', reader.readframes(reader.getnframes()))
+        assert any(samples)
+        assert max(abs(value) for value in samples) < 20000
+
+
 def test_complete_model_summary_fits_exactly_one_page():
     from dailyreport.render import paginate_story, single_page_layout
     bullets = ['新版本提升了模型的推理与代码能力，开发者可以通过官方接口使用。',
@@ -119,8 +136,18 @@ def test_video_keeps_rich_display_copy_and_reads_complete_short_summary():
     assert story['bullets'] == briefing['stories'][0]['bullets']
     assert story['video_narration'] == '模型正式发布。核心能力已经上线，使用时仍需检查结果。'
     scenes = build_scene_plan(prepared)
+    assert scenes[0]['units'] == ['欢迎来到第1期的AI日报，今天是9月19日。本期1条消息。']
     assert scenes[1]['bullets'] == briefing['stories'][0]['bullets']
     assert scenes[1]['units'] == [story['video_narration']]
+
+    prepared['edition_number'] = 12
+    assert build_scene_plan(prepared)[0]['units'][0].startswith('欢迎来到第12期的AI日报')
+
+
+def test_edition_counts_from_configured_first_issue_date():
+    from dailyreport.render import build_scene_plan
+    briefing = {'date': '2026-09-22', 'edition_start_date': '2026-09-21', 'stories': []}
+    assert build_scene_plan(briefing)[0]['units'][0].startswith('欢迎来到第2期的AI日报')
 
 
 def test_english_story_routes_to_english_voice_and_new_scenes_get_lead_in():

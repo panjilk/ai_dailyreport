@@ -1,11 +1,60 @@
 """Structured research/release sources and source-only English extracts."""
 import json
 import re
+import os
+from datetime import datetime
 from email.utils import parsedate_to_datetime
+from html import unescape
 
 from bs4 import BeautifulSoup
 import feedparser
+import requests
 from .models import MODEL_NAMES
+
+
+TRANSLATION_URL = 'https://api.mymemory.translated.net/get'
+
+
+def _translation_chunks(text, limit=450):
+    words = str(text or '').split()
+    chunks, current = [], ''
+    for word in words:
+        if current and len(current) + len(word) + 1 > limit:
+            chunks.append(current)
+            current = ''
+        if len(word) > limit:
+            if current:
+                chunks.append(current); current = ''
+            chunks.extend(word[i:i + limit] for i in range(0, len(word), limit))
+        else:
+            current = (current + ' ' + word).strip()
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+def translate_to_chinese(text, request_get=requests.get):
+    """Translate complete English display copy; fail instead of exposing English fallback."""
+    value = re.sub(r'\s+', ' ', str(text or '')).strip()
+    if not value or not re.search(r'[A-Za-z]', value):
+        return value
+    translated = []
+    for chunk in _translation_chunks(value):
+        params = {'q': chunk, 'langpair': 'en|zh-CN'}
+        email = os.environ.get('MYMEMORY_EMAIL')
+        if email:
+            params['de'] = email
+        response = request_get(TRANSLATION_URL, params=params, timeout=20,
+                               headers={'User-Agent': 'AI-Daily-Report/1.0'})
+        response.raise_for_status()
+        payload = response.json()
+        if payload.get('quotaFinished') or payload.get('responseStatus') not in (None, 200):
+            raise ValueError('英文转中文服务额度不足或返回失败')
+        result = unescape(str(payload.get('responseData', {}).get('translatedText', '')).strip())
+        if not result or result.casefold() == chunk.casefold() or not re.search(r'[\u4e00-\u9fff]', result):
+            raise ValueError('英文转中文服务未返回有效中文')
+        translated.append(result)
+    return ''.join(translated)
 
 
 def english_topic(title, abstract):
@@ -13,9 +62,59 @@ def english_topic(title, abstract):
     return bool(MODEL_NAMES.search(text) or re.search(r'large language model|\bLLMs?\b|foundation model|language model|multimodal|vision.language|reasoning|benchmark|evaluation', text, re.I))
 
 
+def english_ai_related(title, text):
+    """Broad AI filter for mixed-topic English technology feeds."""
+    value = str(title or '') + ' ' + str(text or '')
+    return bool(MODEL_NAMES.search(value) or re.search(
+        r'\bartificial intelligence\b|\bAI\b|\bmachine learning\b|\bdeep learning\b|'
+        r'\bneural networks?\b|\bLLMs?\b|\blanguage models?\b|\bgenerative AI\b|'
+        r'\bAI agents?\b|\btransformers?\b|\bdiffusion models?\b|\bmodel inference\b',
+        value, re.I))
+
+
+def english_blog_candidate(title, text):
+    """Keep AI posts whose headline is meaningful without opening the article."""
+    title = re.sub(r'\s+', ' ', str(title or '')).strip()
+    if not english_ai_related(title, text):
+        return False
+    if english_ai_related(title, ''):
+        return True
+    if re.match(r'^(?:quoting|note on|notes? on|link(?: blog)?|quick note)\b', title, re.I):
+        return False
+    return len(re.findall(r"[A-Za-z0-9][A-Za-z0-9'’-]*", title)) >= 4
+
+
+def normalized_feed_date(value):
+    """Return an aware ISO timestamp for either Atom/ISO or RSS/RFC 822 dates."""
+    text = str(value or '').strip()
+    if not text:
+        raise ValueError('英文技术博客条目缺少发布日期')
+    try:
+        moment = datetime.fromisoformat(text.replace('Z', '+00:00'))
+    except ValueError:
+        moment = parsedate_to_datetime(text)
+    if moment.tzinfo is None or moment.utcoffset() is None:
+        raise ValueError('英文技术博客发布日期缺少时区')
+    return moment.isoformat()
+
+
 def source_rows(source, content):
     kind = source['type']
-    if kind == 'hf_papers':
+    if kind == 'sitemap':
+        root = BeautifulSoup(content, 'xml')
+        for item in root.find_all('url')[:500]:
+            loc = item.find('loc')
+            lastmod = item.find('lastmod')
+            url = loc.get_text(strip=True) if loc else ''
+            published = lastmod.get_text(strip=True) if lastmod else ''
+            if not url or not published or not re.search(r'/news/', url, re.I):
+                continue
+            slug = url.rstrip('/').rsplit('/', 1)[-1].replace('-', ' ')
+            title = f"{source.get('name', '官方')} {slug}"
+            yield dict(title=title, published=published, event_date=published,
+                       event_date_evidence='官方站点 sitemap lastmod: ' + published,
+                       source_url=url, abstract='')
+    elif kind == 'hf_papers':
         entries = json.loads(content)
         if not isinstance(entries, list):
             raise ValueError('Hugging Face 未返回论文列表')
@@ -49,6 +148,21 @@ def source_rows(source, content):
             yield dict(title=item.get('title', ''), published=item.get('published'),
                        source_url=item.get('link', ''),
                        abstract=item.get('summary', '').split('Abstract:', 1)[-1].strip(), content_kind='paper')
+    elif kind == 'english_rss':
+        feed = feedparser.parse(content)
+        if not feed.version:
+            raise ValueError('英文技术博客未返回 RSS/Atom')
+        for item in feed.entries[:500]:
+            published = normalized_feed_date(item.get('published') or item.get('updated'))
+            content_blocks = item.get('content') or []
+            article = content_blocks[0].get('value', '') if content_blocks else item.get('summary', '')
+            title = unescape(re.sub(r'<[^>]+>', ' ', str(item.get('title', ''))))
+            title = re.sub(r'\s+', ' ', title).strip()
+            yield dict(title=title,
+                       published=published, event_date=published,
+                       event_date_evidence='RSS/Atom published: ' + str(published),
+                       source_url=item.get('link', ''), abstract=article,
+                       content_kind=source.get('content_kind', 'article'))
 
 
 def paper_details(content):
@@ -86,9 +200,13 @@ def english_summary(text, kind):
     if result:
         selected.append(result)
     selected = list(dict.fromkeys(selected + caveats))
+    if any(re.search(r'…|\.{3}', sentence) for sentence in selected):
+        raise ValueError('英文 Feed 摘要包含省略号或截断文字')
     # Keep every detected qualification; fail rather than silently drop one.
     if len(selected) > 3 or sum(map(len, selected)) > 1100:
         raise ValueError('英文摘要与必要限定超过单页容量，需人工精简')
     notice = ('论文摘要摘录，结果为作者报告；未核实同行评审或独立复测。' if kind == 'paper'
-              else '官方版本说明摘录；工具更新不等于模型本身发布。')
+              else '官方版本说明摘录；工具更新不等于模型本身发布。' if kind == 'release'
+              else '官方公告原文摘录；能力与效果描述来自发布方，尚未独立复核。' if kind == 'official_article'
+              else '英文技术博客摘录；观点与判断属于原作者，未经独立复核。')
     return [notice] + selected

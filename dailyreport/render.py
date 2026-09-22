@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from array import array
 from copy import deepcopy
 from datetime import date, timedelta, datetime
 from .recency import enforce_recency, news_date, SHANGHAI
@@ -23,6 +24,74 @@ W, H = 1920, 1080
 BG, INK, MUTED, ACCENT = '#F5F3ED', '#252F32', '#727977', '#BB6244'
 CATEGORIES = ['要闻', '模型发布', '开发生态', '产品应用', '技术洞察', '行业动态']
 COLORS = ['#BB6244', '#C89B45', '#426C68', '#A25156', '#647792', '#7B7463']
+
+
+def _write_mono_wav(path, samples, sample_rate=24000):
+    with wave.open(str(path), 'wb') as writer:
+        writer.setparams((1, 2, sample_rate, 0, 'NONE', 'not compressed'))
+        writer.writeframes(samples.tobytes())
+
+
+def generate_background_music(path, duration, sample_rate=24000):
+    """Create a quiet, original instrumental bed with soft pads and bell-like arpeggios."""
+    length = max(1, math.ceil(duration * sample_rate))
+    audio = array('h', [0]) * length
+    chords = [
+        (261.63, 329.63, 392.00, 493.88),  # Cmaj7
+        (220.00, 261.63, 329.63, 392.00),  # Am7
+        (174.61, 220.00, 261.63, 329.63),  # Fmaj7
+        (196.00, 246.94, 293.66, 440.00),  # Gadd9
+    ]
+    chord_seconds = 8.0
+    for i in range(length):
+        t = i / sample_rate
+        chord_index = int(t // chord_seconds) % len(chords)
+        local = t % chord_seconds
+        edge = min(1.0, local / 1.2, (chord_seconds - local) / 1.2)
+        value = sum(math.sin(2 * math.pi * frequency * t) for frequency in chords[chord_index])
+        # The pad stays intentionally quiet and fades across chord changes.
+        audio[i] = round(32767 * 0.032 * edge * value)
+    step_seconds = 0.75
+    pluck_duration = 0.9
+    steps = math.ceil(duration / step_seconds)
+    for step in range(steps):
+        start = round(step * step_seconds * sample_rate)
+        chord = chords[(step // 8) % len(chords)]
+        frequency = chord[(step * 3) % len(chord)] * 2
+        count = min(round(pluck_duration * sample_rate), length - start)
+        for j in range(max(0, count)):
+            t = j / sample_rate
+            envelope = math.exp(-4.8 * t)
+            tone = math.sin(2 * math.pi * frequency * t) + 0.22 * math.sin(4 * math.pi * frequency * t)
+            value = audio[start + j] + round(32767 * 0.09 * envelope * tone)
+            audio[start + j] = max(-32768, min(32767, value))
+    fade = min(round(2 * sample_rate), length // 2)
+    for i in range(fade):
+        gain = i / max(1, fade)
+        audio[i] = round(audio[i] * gain)
+        audio[-i - 1] = round(audio[-i - 1] * gain)
+    _write_mono_wav(path, audio, sample_rate)
+
+
+def generate_transition_clicks(path, duration, transition_times, sample_rate=24000):
+    """Create a restrained two-part mouse click at each story transition."""
+    length = max(1, math.ceil(duration * sample_rate))
+    audio = array('h', [0]) * length
+    for moment in transition_times:
+        start = round(moment * sample_rate)
+        for offset, amplitude in ((0.0, 0.28), (0.038, 0.15)):
+            click_start = start + round(offset * sample_rate)
+            click_length = round(0.045 * sample_rate)
+            for j in range(click_length):
+                index = click_start + j
+                if not 0 <= index < length:
+                    continue
+                t = j / sample_rate
+                envelope = math.exp(-82 * t)
+                tone = math.sin(2 * math.pi * 1850 * t) + 0.35 * math.sin(2 * math.pi * 3100 * t)
+                value = audio[index] + round(32767 * amplitude * envelope * tone)
+                audio[index] = max(-32768, min(32767, value))
+    _write_mono_wav(path, audio, sample_rate)
 
 
 @lru_cache(maxsize=60)
@@ -400,6 +469,9 @@ async def edge_speech(jobs, voice, rate=20, pitch_hz=0, warm=False,
                       english_voice='zh-CN-XiaoxiaoNeural'):
     import edge_tts
     semaphore = asyncio.Semaphore(2)
+    # aiohttp does not trust proxy environment variables by default. The
+    # workstation commonly reaches external TTS services through HTTPS_PROXY.
+    tts_proxy = os.environ.get('HTTPS_PROXY') or os.environ.get('HTTP_PROXY')
 
     async def one(job):
         async with semaphore:
@@ -417,7 +489,7 @@ async def edge_speech(jobs, voice, rate=20, pitch_hz=0, warm=False,
                 request_text = TTS_CUE + spoken_text
                 communicate = edge_tts.Communicate(
                     request_text, job_voice, rate=f'{rate:+d}%', pitch=f'{job_pitch:+d}Hz',
-                    boundary='WordBoundary')
+                    boundary='WordBoundary', proxy=tts_proxy)
                 with mp3.open('wb') as writer:
                     async for event in communicate.stream():
                         if event['type'] == 'audio':
@@ -443,7 +515,10 @@ async def edge_speech(jobs, voice, rate=20, pitch_hz=0, warm=False,
                 target.with_suffix('.words.json').write_text(json.dumps(words, ensure_ascii=False), encoding='utf-8')
             async def bounded_request():
                 return await asyncio.wait_for(request(), 65)
-            await retry_async(bounded_request)
+            # Edge TTS connections can drop intermittently while a long batch is
+            # being synthesized; retry each segment with a longer backoff so one
+            # transient disconnect does not discard the completed segments.
+            await retry_async(bounded_request, attempts=6, delay=2.0)
     # Probe first to avoid dispatching many requests when the service is unavailable.
     await one(jobs[0])
     await asyncio.gather(*(one(job) for job in jobs[1:]))
@@ -482,7 +557,15 @@ def synthesize(jobs, directory, voice, engine, rate=20, pitch_hz=0, warm=False,
 
 def build_scene_plan(briefing):
     count = len(briefing['stories'])
-    intro = f'AI快报，本期{count}条消息。'
+    report_date = date.fromisoformat(briefing['date'])
+    edition = briefing.get('edition_number')
+    if edition is None:
+        start_raw = briefing.get('edition_start_date')
+        edition = (report_date - date.fromisoformat(start_raw)).days + 1 if start_raw else 1
+    if isinstance(edition, bool) or not isinstance(edition, int) or edition < 1:
+        raise ValueError('edition_number 必须为正整数，日报日期不能早于 edition_start_date。')
+    intro = (f'欢迎来到第{edition}期的AI日报，今天是{report_date.month}月{report_date.day}日。'
+             f'本期{count}条消息。')
     scenes = [{'image': overview_image(briefing), 'units': [intro], 'label': '资讯概览',
                'chapter': 0, 'bullets': [], 'speech_language': 'zh-CN'}]
     for i, story in enumerate(briefing['stories'], 1):
@@ -508,7 +591,8 @@ def build_scene_plan(briefing):
 
 def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='auto', rate=10,
            *, pitch_hz=-8, warm=True, english_voice='zh-CN-XiaoxiaoNeural',
-           scene_lead_in_seconds=1.0, search_time=None) -> Path:
+           scene_lead_in_seconds=1.0, background_music_volume=0.42,
+           transition_click_volume=0.32, search_time=None) -> Path:
     briefing = prepare_briefing(briefing)
     validate_briefing(briefing)
     enforce_recency(briefing, search_time or datetime.now(SHANGHAI))
@@ -519,6 +603,10 @@ def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='a
         raise ValueError('音高 pitch_hz 必须为 -20 至 20 的整数。')
     if isinstance(scene_lead_in_seconds, bool) or not isinstance(scene_lead_in_seconds, (int, float)) or not 0 <= scene_lead_in_seconds <= 2:
         raise ValueError('场景开口缓冲必须为0至2秒。')
+    if isinstance(background_music_volume, bool) or not isinstance(background_music_volume, (int, float)) or not 0 <= background_music_volume <= 1:
+        raise ValueError('背景音乐音量必须为0至1。')
+    if isinstance(transition_click_volume, bool) or not isinstance(transition_click_volume, (int, float)) or not 0 <= transition_click_volume <= 1:
+        raise ValueError('切换音效音量必须为0至1。')
     output = Path(output).resolve()
     output.mkdir(parents=True, exist_ok=True)
     work = output / 'assets'
@@ -616,20 +704,38 @@ def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='a
     pages = [{'title': scene['label'], 'chapter': scene['chapter'], 'bullets': scene['bullets'],
               'start': next(t['start'] for t in timeline if t['scene'] == i),
               'end': next(t['end'] for t in reversed(timeline) if t['scene'] == i)} for i, scene in enumerate(scenes)]
+    music = output / 'background_music.wav'
+    clicks = output / 'transition_clicks.wav'
+    transition_times = [chapter['start'] for chapter in chapters[1:count + 1]]
+    generate_background_music(music, cursor)
+    generate_transition_clicks(clicks, cursor, transition_times)
     manifest = {'duration_seconds': round(cursor, 3), 'width': W, 'height': H, 'fps': 24,
                 'speech_engine': engine_used, 'speech_rate_percent': rate,
                 'speech_pitch_hz': pitch_hz, 'speech_warmth': bool(warm),
                 'english_voice': english_voice, 'scene_lead_in_seconds': scene_lead_in_seconds,
+                'background_music': 'original generated instrumental',
+                'background_music_volume': background_music_volume,
+                'transition_click_volume': transition_click_volume,
+                'transition_click_times': transition_times,
                 'navigation_labels': navigation_labels(briefing), 'segments': timeline,
                 'speech_units': speech_units, 'chapters': chapters, 'pages': pages}
     (output / 'timeline.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding='utf-8')
     target = output / 'daily.mp4'
     temporary = output / 'daily.partial.mp4'
     print(f'正在合成 1080p 视频，预计时长 {cursor / 60:.1f} 分钟……', flush=True)
-    log = run_ffmpeg(['-f', 'concat', '-safe', '0', '-i', 'frames.ffconcat', '-i', str(combined),
-                     '-map', '0:v:0', '-map', '1:a:0', '-vf', f'fps=24,fade=t=in:d=0.35,fade=t=out:st={max(0, cursor - .4):.3f}:d=0.4',
+    audio_filter = (
+        f'[1:a]aresample=48000,asplit=2[narration_mix][narration_sidechain];'
+        f'[2:a]aresample=48000,volume={background_music_volume:.3f}[music];'
+        f'[music][narration_sidechain]sidechaincompress=threshold=0.018:ratio=6:attack=20:release=450[ducked];'
+        f'[3:a]aresample=48000,volume={transition_click_volume:.3f}[clicks];'
+        f'[narration_mix][ducked][clicks]amix=inputs=3:normalize=0:dropout_transition=0,'
+        f'loudnorm=I=-16:TP=-1.5:LRA=11[audio]')
+    log = run_ffmpeg(['-f', 'concat', '-safe', '0', '-i', 'frames.ffconcat',
+                     '-i', str(combined), '-i', str(music), '-i', str(clicks),
+                     '-filter_complex', audio_filter, '-map', '0:v:0', '-map', '[audio]',
+                     '-vf', f'fps=24,fade=t=in:d=0.35,fade=t=out:st={max(0, cursor - .4):.3f}:d=0.4',
                      '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'stillimage', '-crf', '20',
-                     '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11', '-ar', '48000',
+                     '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-ar', '48000',
                      '-t', f'{cursor:.6f}', '-movflags', '+faststart', str(temporary)], cwd=work)
     (output / 'render.log').write_text(log, encoding='utf-8')
     temporary.replace(target)

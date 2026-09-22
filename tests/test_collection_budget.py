@@ -199,8 +199,9 @@ def test_source_cap_refills_in_global_order_when_another_source_fails(fetch):
     assert result['collection_stats']['article_requests'] == 4
 
 
+@patch('dailyreport.collect.translate_to_chinese', return_value='模型工具五点零版本')
 @patch('dailyreport.collect._fetch')
-def test_budget_exhaustion_still_processes_feed_content_and_release(fetch):
+def test_budget_exhaustion_still_processes_feed_content_and_release(fetch, _translate):
     normal_feed = ('<rss><channel><item><title>DeepSeek 模型发布 请求版</title>'
                    '<link>https://example.com/article</link>'
                    '<pubDate>Sat, 12 Sep 2026 07:00:00 GMT</pubDate></item></channel></rss>')
@@ -233,7 +234,7 @@ def test_budget_exhaustion_still_processes_feed_content_and_release(fetch):
          'type': 'github_releases'},
     ]}, NOW, 120, 2)
     assert [story['title'] for story in result['stories']] == [
-        'GLM 模型发布 内嵌版', 'Transformers v5.0']
+        'GLM 模型发布 内嵌版', '模型工具五点零版本']
     assert result['collection_stats']['article_requests'] == 1
     assert result['collection_stats']['fetch_failures'] == 1
     assert fetch.call_count == 4

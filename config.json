@@ -5,6 +5,9 @@
   "speech_pitch_hz": -8,
   "speech_warmth": true,
   "scene_lead_in_seconds": 1.0,
+  "background_music_volume": 0.42,
+  "transition_click_volume": 0.32,
+  "edition_start_date": "2026-09-21",
   "topic_scope": "all_ai",
   "article_request_budget": 40,
   "sources": [
@@ -63,6 +66,130 @@
       "type": "github_releases",
       "ai_only": true,
       "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "OpenAI News",
+      "url": "https://openai.com/news/rss.xml",
+      "type": "english_rss",
+      "content_kind": "official_article",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "Google DeepMind",
+      "url": "https://deepmind.google/blog/rss.xml",
+      "type": "english_rss",
+      "content_kind": "official_article",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "Hugging Face Blog",
+      "url": "https://huggingface.co/blog/feed.xml",
+      "type": "english_rss",
+      "content_kind": "official_article",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "NVIDIA Blog",
+      "url": "https://blogs.nvidia.com/feed/",
+      "type": "english_rss",
+      "content_kind": "official_article",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "TechCrunch AI",
+      "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+      "type": "english_rss",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "Simon Willison",
+      "url": "https://simonwillison.net/atom/everything/",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Gary Marcus",
+      "url": "https://garymarcus.substack.com/feed",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Dwarkesh Patel",
+      "url": "https://www.dwarkeshpatel.com/feed",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Gwern",
+      "url": "https://gwern.substack.com/feed",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Max Woolf",
+      "url": "https://minimaxir.com/index.xml",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Giles Thomas",
+      "url": "https://gilesthomas.com/feed/rss.xml",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Sean Goedecke",
+      "url": "https://www.seangoedecke.com/rss.xml",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Martin Alderson",
+      "url": "https://martinalderson.com/feed.xml",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Where's Your Ed At",
+      "url": "https://www.wheresyoured.at/rss/",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "LCamtuf",
+      "url": "https://lcamtuf.substack.com/feed",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
       "enabled": true
     }
   ]

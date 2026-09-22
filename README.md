@@ -74,8 +74,9 @@
 
 **选题优先级**：先按规则划分热点档位，再在同一档位内按发布时间从新到旧排列，较晚的消息继续后排；截取所需条数后，日报与成片保持这一顺序。最高档为大模型迭代、版本发布和能力升级；第二档包括用量、重置、额度、订阅、价格变化，以及重要的 AI 产品、安全、监管等动态；其余 AI 新闻进入普通档。这里的“热门”是基于新闻类型的编辑规则，不是网站浏览量。每条仍需符合近 5 个自然日时效、有来源及事件日期证据；政策通过、监管公告和额度重置等按各自实际发生日期核实。
 
-- 默认启用 **IT之家 RSS、量子位 RSS、雷峰网 RSS、极客公园 RSS、Hugging Face 论文 API、arXiv cs.CL RSS 和 Transformers GitHub Releases API**。雷峰网和极客公园直接使用 Feed 内嵌正文。英文论文和版本使用专门的适配器，不再套用中文标题和日期规则。来源可在 `config.json` 中按 `name`、`url`、`type`、`enabled`、`ai_only`、`max_stories` 管理。
-- `max_stories` 是每个来源的优先入选上限，用于先保证来源多样性。默认优先上限为 IT之家 5 条、量子位 3 条，其余已配置来源各 2 条；如果其他来源没有足够合格内容，程序会继续按全局热点和发布时间顺序从暂缓候选中回填，直到达到 `--limit` 或没有可用新闻。`config.json` 可以添加 RSS/Atom 来源；`ai_only: false` 的综合来源会先过滤 AI 相关条目。
+- 默认启用 **IT之家 RSS、量子位 RSS、雷峰网 RSS、极客公园 RSS、Hugging Face 论文 API、arXiv cs.CL RSS、Transformers GitHub Releases API**，以及 OpenAI News、Google DeepMind、Hugging Face Blog、NVIDIA Blog 四个官方英文 RSS 和 TechCrunch AI。以上来源参考 [ai-daily-skill](https://github.com/geekjourneyx/ai-daily-skill)、[CloudFlare-AI-Insight-Daily](https://github.com/justlovemaki/CloudFlare-AI-Insight-Daily) 与 [ai-daily-briefing](https://github.com/Rion-Wu-tech/ai-daily-briefing) 的数据源设计，并在本项目中按 5 天窗口重新验证日期。官方英文 RSS 标记为 `official_article`，摘要明确注明发布方自述、尚未独立复核。
+- 另启用 Simon Willison、Gary Marcus、Dwarkesh Patel、Gwern、Max Woolf、Giles Thomas、Sean Goedecke、Martin Alderson、Where's Your Ed At、LCamtuf 等 10 个英文技术博客。英文博客来自 [ai-daily-digest](https://github.com/vigorX777/ai-daily-digest) 收录的 Hacker News 社区高质量博客列表；本项目只选取 AI 内容较多的子集，并再次执行 AI 主题与标题可理解性过滤，跳过 `Quoting …`、`Note on …` 等脱离正文无法判断内容的微型条目。雷峰网、极客公园和英文 RSS 使用 Feed 内嵌正文或摘要。英文论文、版本和文章使用专门适配器，不套用中文正文规则。来源可在 `config.json` 中按 `name`、`url`、`type`、`content_kind`、`enabled`、`ai_only`、`max_stories` 管理。
+- `max_stories` 是每个来源的优先入选上限，用于先保证来源多样性。默认优先上限为 IT之家 5 条、量子位 3 条、英文技术博客各 1 条，其余已配置来源各 2 条；如果其他来源没有足够合格内容，程序会继续按全局热点和发布时间顺序从暂缓候选中回填，直到达到 `--limit` 或没有可用新闻。`config.json` 可以添加 RSS/Atom 来源；`ai_only: false` 的综合来源会先过滤 AI 相关条目。
 - `article_request_budget` 控制每次正文请求上限，默认40，允许1至100；在上限内继续检查后续候选，直到收录足够条数。`briefing.json` 的 `collection_stats` 与 `report.md` 记录主题不符、时间超窗、重复、正文失败、事件日期不合格、摘要失败、未检查候选和预算耗尽情况。没有任何合格新闻时，终端也会输出统计和失败原因。
 - 日期识别支持“9 月 12 日”等含空格写法；排除计划、预告和否定语境，优先关联标题中对应模型。多个日期无法消歧时保守跳过，`event_date_evidence` 保存匹配的原文句子供审核。此规则抽取仍不等于人工事实核验。
 - Atom 只有 `updated` 时可作为报道时间候选，仍须从正文核实实际模型事件日期。
@@ -83,7 +84,7 @@
 - 排除缺少时区/时间、未来及窗口外的新闻；按 URL 与标题去重，不足指定条数时如实减少。原站时间有误的条目可能被排除。
 - 单篇文章读取失败会跳过并记入 `report.md`。包含辟谣、纠正语境或无法保留归属限定的文章会保守跳过，因此可能漏掉部分值得报道的内容。没有合格资讯时明确失败，不用旧闻填充。
 - 分类为规则判断，可能需要人工调整。可先 `-CollectOnly`，核实输出的 `briefing.json` 中 `event_date`、来源日期与正文，再用 `-InputFile` 制作视频。
-- 英文论文和版本说明会抽取英文完整句子，保留结果与限制条件，并注明作者报告或官方版本说明；英文摘要保留英文，当前没有自动中文翻译服务。`source_text` 保存完整摘要或版本说明，`bullets` 保存摘要摘录，`language: en` 标记来源语言。超过单页容量的摘要会跳过，不截断句子。普通 RSS 默认仍走中文新闻解析，不能仅改 URL 就接入任意英文网站。
+- 英文论文、版本说明、官方公告和海外观点会先抽取完整英文句子及必要限制，再通过 MyMemory 翻译为中文。视频标题、画面要点和口播只使用中文；翻译失败或额度不足时整条跳过，不回退显示英文。`source_text` 仍保存英文原文供核验，`source_language: en` 标记原始语言，`language: zh` 标记成片语言。可设置 `MYMEMORY_EMAIL` 提高公共翻译服务的调用额度。超过单页容量的译文会跳过，不截断句子。
 - 网站拦截、限流、RSS变更或正文结构变化可能影响采集；会记录失败原因，不将失败解释为当天没有新闻。
 
 ### 实际搜查与入选要求
@@ -102,7 +103,11 @@
 
 默认使用温和的 `zh-CN-XiaoxiaoNeural` 女声，语速为 `+10%`（约1.1倍），音高降低 `8Hz`，并使用轻微暖声、齿音柔化和动态处理。可通过 `-Rate`、`-Pitch` 或 `config.json` 调整。画面保留完整标题和较丰富的摘要要点，口播使用独立的简短总结；短总结会完整读完，镜头时长由真实音频决定，不为固定时长二次变速。内容过长时应缩短口播总结，不能截断或读到一半切换；联网配音会校验词级标记与音频尾部。
 
+视频会生成一条原创的轻松纯音乐作为背景，并在人声出现时自动压低；每条新闻切换画面时加入柔和的双段鼠标点击音效。默认混音系数分别为 `background_music_volume: 0.42` 和 `transition_click_volume: 0.32`，可以在 `config.json` 中调低或设为 `0`。输出目录会保留 `background_music.wav` 与 `transition_clicks.wav`，便于单独试听和复核。
+
 每个新画面默认提前显示 `1.0` 秒再开始口播。中文和英文统一使用 `zh-CN-XiaoxiaoNeural`，避免切换音色造成割裂；送入语音引擎前会在 `Grok`、`ChatGPT`、`Word` 等英文名称与中文之间加入只用于发音的短停顿，画面和字幕仍显示原文。纯英文稿件也使用同一音色。可通过 `config.json` 的 `scene_lead_in_seconds` 和 `english_voice` 调整。
+
+视频开场会先播报“欢迎来到第 X 期的 AI 日报，今天是 X 月 X 日”，再说明本期消息数量。`config.json` 的 `edition_start_date` 是第一期日期，默认为 `2026-09-21`；之后按日报日期顺延，同一天重复生成时保持一致。在输入 `briefing.json` 中设置正整数 `edition_number` 可以覆盖自动期数。
 
 编辑稿可用 `display_title` 设置简短的画面标题，原始 `title` 仍用于来源记录和排序。`video_title` 与 `video_bullets` 用于口播总结，`bullets` 用于画面上的详细要点。
 
