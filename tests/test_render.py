@@ -121,6 +121,14 @@ def test_navigation_uses_model_names():
                                           {'title': '新模型', 'nav_label': 'GLM'}]}) == ['概览', 'ChatGPT', 'GLM', '结束']
 
 
+def test_navigation_is_visible_on_lead_in_frame():
+    from PIL import Image
+    from dailyreport.render import ACCENT, frame_with_navigation
+    base = Image.new('RGB', (1920, 1080), 'white')
+    frame = frame_with_navigation(base, 1, 4, 1, 2, ['概览', 'GPT', 'Claude', '结束'])
+    assert frame.getpixel((600, 1040)) == tuple(bytes.fromhex(ACCENT.lstrip('#')))
+
+
 def test_video_keeps_rich_display_copy_and_reads_complete_short_summary():
     from dailyreport.render import prepare_video_briefing, build_scene_plan
     briefing = {'date': '2026-09-19', 'stories': [{
@@ -134,7 +142,7 @@ def test_video_keeps_rich_display_copy_and_reads_complete_short_summary():
     story = prepared['stories'][0]
     assert story['title'] == briefing['stories'][0]['title']
     assert story['bullets'] == briefing['stories'][0]['bullets']
-    assert story['video_narration'] == '模型正式发布。核心能力已经上线，使用时仍需检查结果。'
+    assert story['video_narration'] == '核心能力已经上线，使用时仍需检查结果。'
     scenes = build_scene_plan(prepared)
     assert scenes[0]['units'] == ['欢迎来到第1期的AI日报，今天是9月19日。本期1条消息。']
     assert scenes[1]['bullets'] == briefing['stories'][0]['bullets']
@@ -142,6 +150,69 @@ def test_video_keeps_rich_display_copy_and_reads_complete_short_summary():
 
     prepared['edition_number'] = 12
     assert build_scene_plan(prepared)[0]['units'][0].startswith('欢迎来到第12期的AI日报')
+
+
+def test_video_auto_summary_handles_long_title_with_list_separator():
+    from dailyreport.render import prepare_video_briefing
+    briefing = {'stories': [{
+        'title': '阿里千问办公发布企业上下文、数字员工及 Agent 硬件 QwenNote A2',
+        'bullets': ['企业可以统一管理知识，并让数字员工调用内部资料完成任务。'],
+        'narration': '原始长稿。', 'category': '产品应用', 'source_name': 'IT之家',
+        'source_url': 'https://example.com/qwen', 'published': '2026-09-22',
+    }]}
+    prepared = prepare_video_briefing(briefing)
+    assert prepared['stories'][0]['video_narration'].startswith('企业可以统一管理知识')
+    assert len(prepared['stories'][0]['video_narration']) <= 100
+
+
+def test_video_auto_summary_skips_source_notice_and_reporting_boilerplate():
+    from dailyreport.render import prepare_video_briefing
+    briefing = {'stories': [{
+        'title': '数学和人工智能咨询小组', 'nav_label': 'OpenAI',
+        'bullets': [
+            '官方公告原文摘录；能力与效果描述来自发布方，尚未独立复核。',
+            'OpenAI正在与一个独立的数学和人工智能咨询小组合作，以指导对新兴人工智能结果的审查和沟通。',
+        ],
+        'narration': '原始长稿。', 'category': '行业动态', 'source_name': 'OpenAI News',
+        'source_url': 'https://example.com/openai', 'published': '2026-09-22',
+        'content_kind': 'official_article',
+    }]}
+    narration = prepare_video_briefing(briefing)['stories'][0]['video_narration']
+    assert '咨询小组' in narration
+    assert '原文摘录' not in narration
+    assert '未经独立复核' not in narration
+
+
+def test_prepare_briefing_removes_editorial_notice_from_visible_bullets():
+    from dailyreport.render import prepare_briefing
+    briefing = {'stories': [{
+        'title': '模型能力更新',
+        'bullets': [
+            '英文技术博客摘录；观点与判断属于原作者，未经独立复核。',
+            '模型新增工具调用能力。',
+        ],
+    }]}
+    story = prepare_briefing(briefing)['stories'][0]
+    assert story['bullets'] == ['模型新增工具调用能力。']
+    assert story['narration'] == '模型能力更新。模型新增工具调用能力。'
+
+
+def test_video_auto_summary_prefers_production_result_over_event_context():
+    from dailyreport.render import prepare_video_briefing
+    briefing = {'stories': [{
+        'title': '人工智能生态系统达到生产规模', 'nav_label': 'NVIDIA',
+        'bullets': [
+            '官方公告原文摘录；能力与效果描述来自发布方，尚未独立复核。',
+            '建设者参加了一场行业活动，讨论当地人工智能生态系统。',
+            '当地开发商和企业已经准备好将基础设施投入生产使用。',
+        ],
+        'narration': '原始长稿。', 'category': '行业动态', 'source_name': 'NVIDIA Blog',
+        'source_url': 'https://example.com/nvidia', 'published': '2026-09-22',
+        'content_kind': 'official_article',
+    }]}
+    narration = prepare_video_briefing(briefing)['stories'][0]['video_narration']
+    assert '投入生产使用' in narration
+    assert '行业活动' not in narration
 
 
 def test_edition_counts_from_configured_first_issue_date():
@@ -163,7 +234,7 @@ def test_english_story_routes_to_english_voice_and_new_scenes_get_lead_in():
     assert [scene_lead_in_frames(jobs, i, 1.0) for i in range(3)] == [24, 24, 0]
     original = 'Grok语音升级，ChatGPT接入Word。'
     spoken = tts_pronunciation_text(original)
-    assert spoken == 'Grok，语音升级，ChatGPT，接入，Word。'
+    assert spoken == original
     from dailyreport.render import lexical_text
     assert lexical_text(spoken) == lexical_text(original)
 
@@ -175,8 +246,8 @@ def test_english_story_routes_to_english_voice_and_new_scenes_get_lead_in():
     ]
     content, trim = remove_tts_cue(words)
     assert [word['text'] for word in content] == ['千问', '更新']
-    assert trim == 0.75
-    assert content[0]['offset'] == 5_000_000
+    assert trim == 1.05
+    assert content[0]['offset'] == 2_000_000
 
 
 def test_speech_verification_rejects_a_missing_final_word():

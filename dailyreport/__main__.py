@@ -15,6 +15,16 @@ from .render import CATEGORIES, prepare_briefing, render, validate_briefing, win
 
 ROOT = Path(__file__).resolve().parent.parent
 SHANGHAI = timezone(timedelta(hours=8))
+MIN_VIDEO_STORIES = 5
+
+
+def require_minimum_video_stories(briefing):
+    count = len(briefing['stories'])
+    if count < MIN_VIDEO_STORIES:
+        raise ValueError(
+            f'本期只有 {count} 条合格新闻，至少需要 {MIN_VIDEO_STORIES} 条才生成视频；'
+            '请补充窗口内有明确事件和可靠来源的新闻，不使用旧闻或空泛内容凑数。'
+        )
 
 
 def export_text(briefing, output):
@@ -97,7 +107,7 @@ def main(argv=None):
     parser.add_argument('--input', type=Path, help='使用已准备的 briefing JSON，跳过联网采集')
     parser.add_argument('--config', type=Path, default=ROOT / 'config.json')
     parser.add_argument('--hours', type=int, default=120, help='最多回看120小时，且绝不早于北京时间最近5天的首日零点')
-    parser.add_argument('--limit', type=int, default=10, help='最多收录条数，默认10，允许1至12')
+    parser.add_argument('--limit', type=int, default=10, help='最多收录条数，默认10，允许5至12')
     parser.add_argument('--output', type=Path, help='输出目录，默认按运行时间新建')
     parser.add_argument('--collect-only', action='store_true', help='仅采集文字，不制作视频')
     parser.add_argument('--tts', choices=['auto', 'edge', 'sapi'], default='auto')
@@ -106,8 +116,8 @@ def main(argv=None):
     parser.add_argument('--pitch', type=int, help='音高调整，默认-8Hz；支持-20至20')
     parser.add_argument('--open', action='store_true', help='完成后打开本地预览页')
     args = parser.parse_args(argv)
-    if not 1 <= args.limit <= 12 or not 1 <= args.hours <= 120:
-        parser.error('--limit 必须在1至12之间，--hours 必须在1至120之间。')
+    if not MIN_VIDEO_STORIES <= args.limit <= 12 or not 1 <= args.hours <= 120:
+        parser.error('--limit 必须在5至12之间，--hours 必须在1至120之间。')
     if args.rate is not None and not -10 <= args.rate <= 60:
         parser.error('--rate 必须在-10至60之间。')
     if args.pitch is not None and not -20 <= args.pitch <= 20:
@@ -125,6 +135,8 @@ def main(argv=None):
         briefing = prepare_briefing(briefing)
         validate_briefing(briefing)
         enforce_recency(briefing, now, args.hours)
+        if not args.collect_only:
+            require_minimum_video_stories(briefing)
         output = (args.output or ROOT / 'outputs' / now.strftime('%Y-%m-%d_%H%M%S_%f')).resolve()
         if (output / 'daily.mp4').exists() or (output / 'briefing.json').exists():
             raise ValueError('该目录已有日报，请指定新的 --output，避免覆盖已有成片或文字稿。')
@@ -135,7 +147,7 @@ def main(argv=None):
                    pitch_hz=args.pitch if args.pitch is not None else config.get('speech_pitch_hz', -8),
                    warm=config.get('speech_warmth', True),
                    english_voice=config.get('english_voice', 'zh-CN-XiaoxiaoNeural'),
-                   scene_lead_in_seconds=config.get('scene_lead_in_seconds', 1.0),
+                   scene_lead_in_seconds=config.get('scene_lead_in_seconds', 0.25),
                    background_music_volume=config.get('background_music_volume', 0.42),
                    transition_click_volume=config.get('transition_click_volume', 0.32),
                    search_time=now)

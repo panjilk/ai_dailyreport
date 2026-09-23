@@ -260,7 +260,7 @@ class CollectionTests(unittest.TestCase):
             ('智谱发布 GLM-5，推理能力提升', 'GLM'),
             ('通义千问 Qwen3 多模态模型开源', 'Qwen'),
             ('Kimi K3 上下文能力升级', 'Kimi'),
-            ('团队发布新一代大语言模型', '基础模型'),
+            ('团队发布新一代大语言模型', '大模型'),
         ]
         rejected = [
             'OpenAI 完成融资，GPT 团队扩张', 'Claude 公司任命新高管',

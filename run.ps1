@@ -1,7 +1,7 @@
 param(
     [string]$InputFile,
     [ValidateRange(1,120)][int]$Hours = 120,
-    [ValidateRange(1,12)][int]$Limit = 10,
+    [ValidateRange(5,12)][int]$Limit = 10,
     [ValidateSet('auto','edge','sapi')][string]$Tts = 'auto',
     [Nullable[int]]$Rate,
     [ValidateRange(-20,20)][Nullable[int]]$Pitch,

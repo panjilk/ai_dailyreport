@@ -4,7 +4,7 @@ import pytest
 
 from dailyreport.collect import collect, classify
 from dailyreport.recency import SHANGHAI, article_event_evidence, enforce_recency
-from dailyreport.topics import ai_related, editorial_candidate, news_priority
+from dailyreport.topics import ai_related, editorial_candidate, news_priority, playback_priority
 
 
 @pytest.mark.parametrize('title,text,category', [
@@ -38,7 +38,7 @@ def test_priority_applies_before_limit_and_survives_final_sort(fetch):
     now = datetime(2026, 9, 14, 12, tzinfo=SHANGHAI)
     result = collect({'topic_scope': 'all_ai', 'sources': [{'name': 'test', 'url': 'https://example.com/rss'}]}, now, 48, 2)
     enforce_recency(result, now)
-    assert [s['title'] for s in result['stories']] == [titles[2], titles[0]]
+    assert [s['title'] for s in result['stories']] == [titles[2], titles[1]]
     assert [news_priority(s) for s in result['stories']] == [0, 1]
     assert fetch.call_count == 3
 
@@ -60,11 +60,32 @@ def test_same_heat_level_keeps_newest_story_first():
     assert news_priority(stories[0]) == news_priority(stories[1]) == 1
 
 
+def test_model_news_plays_before_newer_general_ai_news():
+    from dailyreport.recency import enforce_recency
+    stories = [
+        {'title': 'AI眼镜出货量增长', 'published': '2026-09-22T10:00:00+08:00', 'event_date': '2026-09-22'},
+        {'title': 'OpenAI升级GPT推理能力', 'published': '2026-09-21T10:00:00+08:00', 'event_date': '2026-09-21'},
+        {'title': '智谱发布GLM新版本', 'published': '2026-09-20T10:00:00+08:00', 'event_date': '2026-09-20'},
+    ]
+    briefing = {'date': '2026-09-22', 'stories': stories}
+    enforce_recency(briefing, datetime(2026, 9, 22, 12, tzinfo=SHANGHAI))
+    assert [story['title'] for story in briefing['stories']] == [stories[2]['title'], stories[1]['title'], stories[0]['title']]
+
+
+def test_comparison_target_does_not_count_as_model_news():
+    assert playback_priority({'title': 'Meta Muse下载量超过ChatGPT同期'})[0] == 1
+    assert playback_priority({'title': 'Claude推出新版本'})[0] == 0
+    assert playback_priority({'title': 'DeepSeek升级推理能力'})[0] == 0
+    assert playback_priority({'title': 'OpenAI与独立咨询小组合作审查AI成果'})[0] == 0
+    assert playback_priority({'title': '阿里开源 Qwen-Image-2.1', 'category': '模型发布'}) < playback_priority({'title': '智谱 ZCode 更新 GLM 编程工作流', 'category': '开发生态'})
+
+
 @pytest.mark.parametrize('title', [
     'DeepSeek 新模型正式发布',
     'GPT-6 推理能力升级',
     'GLM 新版本发布',
     'Claude 5 正式上线',
+    'Anthropic 发布 Claude Opus 5.5',
     'SpaceXAI 发布 Grok Voice Transcribe 2.0 语音转文本模型：错误率降低约一半，价格保持不变',
     'Grok Voice Transcribe 2.0 speech-to-text model launches today',
 ])

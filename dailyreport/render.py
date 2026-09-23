@@ -24,6 +24,7 @@ W, H = 1920, 1080
 BG, INK, MUTED, ACCENT = '#F5F3ED', '#252F32', '#727977', '#BB6244'
 CATEGORIES = ['要闻', '模型发布', '开发生态', '产品应用', '技术洞察', '行业动态']
 COLORS = ['#BB6244', '#C89B45', '#426C68', '#A25156', '#647792', '#7B7463']
+VIDEO_NOTICE_PREFIXES = ('论文摘要摘录', '官方版本说明摘录', '官方公告原文摘录', '英文技术博客摘录')
 
 
 def _write_mono_wav(path, samples, sample_rate=24000):
@@ -161,6 +162,10 @@ def prepare_briefing(briefing):
     result = deepcopy(briefing)
     for story in result.get('stories', []):
         if story.get('title') and story.get('bullets'):
+            visible_bullets = [bullet for bullet in story['bullets']
+                               if not bullet.strip().startswith(VIDEO_NOTICE_PREFIXES)]
+            if visible_bullets:
+                story['bullets'] = visible_bullets
             story['narration'] = canonical_narration(story)
     return result
 
@@ -209,31 +214,80 @@ def navigation_labels(briefing):
     return ['概览'] + [s.get('nav_label') or s['title'] for s in briefing['stories']] + ['结束']
 
 
+def _clean_video_fact(text, source_name):
+    text = re.sub(r'\s+', ' ', text).strip()
+    source = re.escape(source_name)
+    text = re.sub(r'^(?:据)?' + source + r'[^，。]{0,40}(?:消息|报道|获悉)[，：,:\s]*', '', text)
+    text = re.sub(r'^(?:据|根据)[^，,。]{1,45}(?:报道|消息|透露|估计|数据|称)[，,:：\s]*', '', text)
+    text = re.sub(r'^[^，,。]{1,28}(?:表示|指出|宣布|披露)[，,:：\s]*', '', text)
+    text = re.sub(r'^消息人士(?:透露|称)[，,:：\s]*', '', text)
+    return text.strip(' ，,')
+
+
+def _compact_video_fact(text, max_chars=76):
+    text = re.sub(r'\s+([，。！？；：])', r'\1', text).strip()
+    if len(text) <= max_chars:
+        return text.rstrip('。！？') + '。'
+    clauses = [part.strip(' ，,；;。') for part in re.split(r'[，,；;]', text) if part.strip(' ，,；;。')]
+    while len(clauses) > 1 and re.match(r'^(?:今天|本周|近日|日前|在.{0,35}(?:会上|专场上|期间|活动中))$', clauses[0]):
+        clauses.pop(0)
+    chosen = []
+    for clause in clauses:
+        candidate = '，'.join(chosen + [clause])
+        if len(candidate) > max_chars:
+            break
+        chosen.append(clause)
+        if len(candidate) >= 32:
+            break
+    if not chosen:
+        raise ValueError('核心事实过长且缺少可压缩的完整分句')
+    return '，'.join(chosen).rstrip('。！？') + '。'
+
+
+def _video_fact_score(text):
+    weighted_terms = (
+        (r'投入生产|正式使用|量产|上线|开源', 4),
+        (r'发布|推出|新增|升级|提升|超过|达到|增长|下降', 3),
+        (r'支持|合作|训练|准确率|性能|能力', 1),
+    )
+    return sum(weight * len(re.findall(pattern, text, re.I)) for pattern, weight in weighted_terms)
+
+
 def prepare_video_briefing(briefing):
-    """Keep rich on-screen notes and prepare a shorter complete narration."""
+    """Keep full display notes while producing a distinct, concise spoken brief."""
     result = deepcopy(briefing)
     for story in result['stories']:
-        title = story.get('video_title') or re.split(r'[，：:]', story['title'], maxsplit=1)[0]
         bullets = story.get('video_bullets')
         if bullets is None:
-            source = re.escape(story['source_name'])
             candidates = []
             for bullet in story['bullets']:
-                text = re.sub(r'^(?:据)?' + source + r'[^，。]{0,35}(?:消息|报道|获悉)[，：,\s]*', '', bullet)
+                if bullet.strip().startswith(VIDEO_NOTICE_PREFIXES):
+                    continue
+                text = _clean_video_fact(bullet, story['source_name'])
                 for sentence in re.split(r'(?<=[。！？])', text):
-                    if sentence and story['source_name'] not in sentence and len(title + sentence) <= 65:
+                    sentence = sentence.strip()
+                    if len(sentence) >= 12 and story['source_name'] not in sentence:
                         candidates.append(sentence)
-            bullets = candidates[:1]
+            if candidates:
+                fact = max(enumerate(candidates),
+                           key=lambda item: (_video_fact_score(item[1]), -item[0]))[1]
+                if re.search(r'[？?]', story['title']) and re.search(r'黑客新闻|^我对', fact):
+                    topic = story['title'].rstrip('？?。')
+                    fact = f'文章围绕“{topic}”展开讨论。'
+                bullets = [_compact_video_fact(fact)]
+            else:
+                bullets = []
             if not bullets:
                 raise ValueError('请为这条新闻填写约40至60字的 video_title 和 video_bullets：' + story['title'])
         if not isinstance(bullets, list) or not bullets or not all(isinstance(x, str) and x.strip() for x in bullets):
             raise ValueError('video_bullets 必须是非空文字数组：' + story['title'])
-        video_story = {'title': title, 'bullets': bullets}
-        story['video_narration'] = canonical_narration(video_story)
-        if re.search(r'https?://|来源|据.{0,20}(?:报道|消息)', story['video_narration']) or story['source_name'] in story['video_narration']:
-            raise ValueError('视频短稿仍包含新闻来源，请编辑 video_title/video_bullets：' + title)
+        story['video_narration'] = ''.join(bullets)
+        source_is_subject = story['source_name'] in story['title']
+        if (re.search(r'https?://|来源|据.{0,20}(?:报道|消息)', story['video_narration']) or
+                (not source_is_subject and story['source_name'] in story['video_narration'])):
+            raise ValueError('视频短稿仍包含新闻来源，请编辑 video_bullets：' + story['title'])
         if len(story['video_narration']) > 100:
-            raise ValueError('视频短稿过长，请精简到约40至60字：' + title)
+            raise ValueError('视频短稿过长，请精简到约40至60字：' + story['title'])
     return result
 
 
@@ -334,19 +388,9 @@ def outro_image(briefing):
     return im
 
 
-def frame_with_subtitle(base, text, current, total, story_index, story_count, labels=None):
+def frame_with_navigation(base, current, total, story_index, story_count, labels=None):
     im = base.copy()
     d = ImageDraw.Draw(im)
-    face = font(34)
-    lines = wrap_text(text, face, 1680)
-    if len(lines) > 2:
-        raise ValueError('单条字幕过长')
-    width = min(1760, max(face.getlength(line) for line in lines) + 70)
-    height = len(lines) * 43 + 18
-    top = 995 - height
-    d.rounded_rectangle(((W - width) / 2, top, (W + width) / 2, 995), radius=14, fill='#3E4543')
-    for k, line in enumerate(lines):
-        d.text((W / 2, top + 7 + 43 * k), line, anchor='mt', font=face, fill='white')
     nav_count = story_count + 2
     for i in range(nav_count):
         left, right = i * W / nav_count, (i + 1) * W / nav_count
@@ -359,6 +403,22 @@ def frame_with_subtitle(base, text, current, total, story_index, story_count, la
         d.text(((left + right) / 2, 1046), label, anchor='mm', font=face, fill='white' if selected else MUTED)
     d.rectangle((0, 1074, W, 1079), fill='#DCDDD5')
     d.rectangle((0, 1074, round(W * current / total), 1079), fill=ACCENT)
+    return im
+
+
+def frame_with_subtitle(base, text, current, total, story_index, story_count, labels=None):
+    im = frame_with_navigation(base, current, total, story_index, story_count, labels)
+    d = ImageDraw.Draw(im)
+    face = font(34)
+    lines = wrap_text(text, face, 1680)
+    if len(lines) > 2:
+        raise ValueError('单条字幕过长')
+    width = min(1760, max(face.getlength(line) for line in lines) + 70)
+    height = len(lines) * 43 + 18
+    top = 995 - height
+    d.rounded_rectangle(((W - width) / 2, top, (W + width) / 2, 995), radius=14, fill='#3E4543')
+    for k, line in enumerate(lines):
+        d.text((W / 2, top + 7 + 43 * k), line, anchor='mt', font=face, fill='white')
     return im
 
 
@@ -386,7 +446,7 @@ def lexical_text(text):
 
 
 TTS_CUE = '下一条。'
-TTS_PREROLL_SECONDS = 0.5
+TTS_PREROLL_SECONDS = 0.2
 
 
 def verify_word_coverage(text, words, duration, min_preroll=0):
@@ -450,10 +510,8 @@ def speech_voice(job, chinese_voice, english_voice):
 
 
 def tts_pronunciation_text(text):
-    """Add TTS-only boundaries at script changes while preserving every word."""
-    english_run = r'([A-Za-z][A-Za-z0-9.+/_-]*(?:[ \t]+[A-Za-z0-9][A-Za-z0-9.+/_-]*)*)'
-    text = re.sub(english_run + r'\s*(?=[\u4e00-\u9fff])', r'\1，', text)
-    return re.sub(r'(?<=[\u4e00-\u9fff])\s*(?=[A-Za-z])', '，', text)
+    """Keep the narrator's punctuation; script switches are not sentence breaks."""
+    return text
 
 
 def scene_lead_in_frames(jobs, index, seconds):
@@ -484,7 +542,7 @@ async def edge_speech(jobs, voice, rate=20, pitch_hz=0, warm=False,
                 spoken_text = tts_pronunciation_text(job['text'])
                 job['tts_text'] = spoken_text
                 # A spoken cue gives the neural voice real acoustic context before
-                # the first news word. It is removed after synthesis while 500 ms
+                # the first news word. It is removed after synthesis while 200 ms
                 # of its following pause is retained as protected preroll.
                 request_text = TTS_CUE + spoken_text
                 communicate = edge_tts.Communicate(
@@ -591,7 +649,7 @@ def build_scene_plan(briefing):
 
 def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='auto', rate=10,
            *, pitch_hz=-8, warm=True, english_voice='zh-CN-XiaoxiaoNeural',
-           scene_lead_in_seconds=1.0, background_music_volume=0.42,
+           scene_lead_in_seconds=0.25, background_music_volume=0.42,
            transition_click_volume=0.32, search_time=None) -> Path:
     briefing = prepare_briefing(briefing)
     validate_briefing(briefing)
@@ -658,7 +716,10 @@ def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='a
                 number = len(timeline)
                 start, end = cursor_frames / 24, (cursor_frames + lead_frames) / 24
                 image_path = work / f'frame-{number:03}.png'
-                scenes[job['scene']]['image'].save(image_path)
+                frame_with_navigation(
+                    scenes[job['scene']]['image'], n, len(jobs), job['chapter'], count,
+                    navigation_labels(briefing),
+                ).save(image_path)
                 concat += [f"file 'frame-{number:03}.png'", 'option framerate 24',
                            f'duration {lead_frames / 24:.9f}']
                 timeline.append({'start': round(start, 4), 'end': round(end, 4),

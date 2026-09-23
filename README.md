@@ -6,7 +6,9 @@
 
 ## 已生成的成片
 
-**最新扩充版**：`outputs/video-20260919-expanded-v2/index.html`，约2分22秒；收录9月15日至19日窗口内的10条资讯，先排热点档位，同档按发布时间从新到旧。使用晓伊自然语速，每条短总结完整读完，画面保留详细要点。9条来自本次采集，1条论文复用本日早前已抓取的来源记录。
+**最新扩充版**：`outputs/2026-09-23_134603_612385/index.html`，约1分41秒；收录近5天内的7条具体消息，按大模型相关性优先播放，配音不在中英文名称交界处人为停顿。
+
+**2026-09-19 扩充版**：`outputs/video-20260919-expanded-v2/index.html`，约2分22秒；收录9月15日至19日窗口内的10条资讯，先排热点档位，同档按发布时间从新到旧。
 
 以下早期版本仅作历史存档，不能直接作为当前日报导入；导入时仍会按本次北京时间近 5 个自然日窗口重新过滤。
 
@@ -22,7 +24,7 @@
 
 **时效硬限制：以本次搜查时间为准，只收录北京时间搜查当天及此前 4 个自然日的新闻，最早到第 5 个自然日零点。** 默认 `--hours 120`；实际起点取“当前时刻向前 120 小时”与“第 5 个自然日零点”中较晚的时间。条数不足不继续扩窗，也不用窗口外旧闻补齐。稿件的 `date` 不必是今天，但报道日期和事件日期都必须处于本次窗口内；不能以新转载日期替代旧事件日期。导入稿件须提供 `event_date`，过期或未来条目会被剔除并记录原因，全部不合格时停止生成。输入中的旧 `search_date` 不能绕过此检查。
 
-双击 **`生成日报.cmd`**。程序获取北京时间近 5 个自然日的新闻，默认最多收录 10 条，完成后打开本地视频预览页。首次运行会在项目 `.venv` 中安装依赖，需要 Python 3.10 或更高版本和联网。
+双击 **`生成日报.cmd`**。程序获取北京时间近 5 个自然日的新闻，默认最多收录 10 条，完成后打开本地视频预览页。正式视频至少需要 5 条通过时效、具体性和来源筛选的新闻；不足 5 条就停止生成，不用旧闻或空泛内容凑数。大模型发布和更新优先播放。首次运行会在项目 `.venv` 中安装依赖，需要 Python 3.10 或更高版本和联网。
 
 每次结果单独保存在 `outputs/日期_时间/`，已有日报不会被覆盖：
 
@@ -72,7 +74,7 @@
 
 默认 `topic_scope: all_ai`，收录所有与 AI 相关的新闻，包括国内外大模型迭代、产品功能、GPT/ChatGPT 用量重置、额度和订阅调整、论文评测、AI 政策监管、政治与社会影响、行业融资、人事、硬件及应用。无 AI 关联的普通政治或社会新闻不收录。GLM/智谱、Kimi/月之暗面、DeepSeek/深度求索等国内模型及其他中英文别名继续支持；可切回 `foundation_models` 仅看模型主题。
 
-**选题优先级**：先按规则划分热点档位，再在同一档位内按发布时间从新到旧排列，较晚的消息继续后排；截取所需条数后，日报与成片保持这一顺序。最高档为大模型迭代、版本发布和能力升级；第二档包括用量、重置、额度、订阅、价格变化，以及重要的 AI 产品、安全、监管等动态；其余 AI 新闻进入普通档。这里的“热门”是基于新闻类型的编辑规则，不是网站浏览量。每条仍需符合近 5 个自然日时效、有来源及事件日期证据；政策通过、监管公告和额度重置等按各自实际发生日期核实。
+**选题优先级**：OpenAI/GPT、Claude、GLM、DeepSeek、Qwen 等具名大模型的发布、能力、产品和用量消息优先入选并靠前播放；仅把模型作为比较对象的报道不算该模型的更新。模型消息内部先排版本发布与能力升级，再排其他动态；同档按发布时间从新到旧。之后才播放其他 AI 新闻。这里的“热门”是基于新闻类型的编辑规则，不是网站浏览量。每条仍需符合近 5 个自然日时效、有来源及事件日期证据；政策通过、监管公告和额度重置等按各自实际发生日期核实。
 
 - 默认启用 **IT之家 RSS、量子位 RSS、雷峰网 RSS、极客公园 RSS、Hugging Face 论文 API、arXiv cs.CL RSS、Transformers GitHub Releases API**，以及 OpenAI News、Google DeepMind、Hugging Face Blog、NVIDIA Blog 四个官方英文 RSS 和 TechCrunch AI。以上来源参考 [ai-daily-skill](https://github.com/geekjourneyx/ai-daily-skill)、[CloudFlare-AI-Insight-Daily](https://github.com/justlovemaki/CloudFlare-AI-Insight-Daily) 与 [ai-daily-briefing](https://github.com/Rion-Wu-tech/ai-daily-briefing) 的数据源设计，并在本项目中按 5 天窗口重新验证日期。官方英文 RSS 标记为 `official_article`，摘要明确注明发布方自述、尚未独立复核。
 - 另启用 Simon Willison、Gary Marcus、Dwarkesh Patel、Gwern、Max Woolf、Giles Thomas、Sean Goedecke、Martin Alderson、Where's Your Ed At、LCamtuf 等 10 个英文技术博客。英文博客来自 [ai-daily-digest](https://github.com/vigorX777/ai-daily-digest) 收录的 Hacker News 社区高质量博客列表；本项目只选取 AI 内容较多的子集，并再次执行 AI 主题与标题可理解性过滤，跳过 `Quoting …`、`Note on …` 等脱离正文无法判断内容的微型条目。雷峰网、极客公园和英文 RSS 使用 Feed 内嵌正文或摘要。英文论文、版本和文章使用专门适配器，不套用中文正文规则。来源可在 `config.json` 中按 `name`、`url`、`type`、`content_kind`、`enabled`、`ai_only`、`max_stories` 管理。
@@ -105,7 +107,7 @@
 
 视频会生成一条原创的轻松纯音乐作为背景，并在人声出现时自动压低；每条新闻切换画面时加入柔和的双段鼠标点击音效。默认混音系数分别为 `background_music_volume: 0.42` 和 `transition_click_volume: 0.32`，可以在 `config.json` 中调低或设为 `0`。输出目录会保留 `background_music.wav` 与 `transition_clicks.wav`，便于单独试听和复核。
 
-每个新画面默认提前显示 `1.0` 秒再开始口播。中文和英文统一使用 `zh-CN-XiaoxiaoNeural`，避免切换音色造成割裂；送入语音引擎前会在 `Grok`、`ChatGPT`、`Word` 等英文名称与中文之间加入只用于发音的短停顿，画面和字幕仍显示原文。纯英文稿件也使用同一音色。可通过 `config.json` 的 `scene_lead_in_seconds` 和 `english_voice` 调整。
+每个新画面默认提前显示 `0.25` 秒再开始口播。中文和英文统一使用 `zh-CN-XiaoxiaoNeural`，避免切换音色造成割裂；英文名称与中文之间不再人为插入逗号，语音按稿件原有标点自然衔接。纯英文稿件也使用同一音色。可通过 `config.json` 的 `scene_lead_in_seconds` 和 `english_voice` 调整。
 
 视频开场会先播报“欢迎来到第 X 期的 AI 日报，今天是 X 月 X 日”，再说明本期消息数量。`config.json` 的 `edition_start_date` 是第一期日期，默认为 `2026-09-21`；之后按日报日期顺延，同一天重复生成时保持一致。在输入 `briefing.json` 中设置正整数 `edition_number` 可以覆盖自动期数。
 

@@ -12,7 +12,7 @@ from .recency import RECENCY_DAYS, window_start, article_event_evidence, news_da
 from .international import (english_blog_candidate, english_summary, english_topic,
                             paper_details, source_rows, translate_to_chinese)
 from .models import MODEL_NAMES, model_labels
-from .topics import ai_related, editorial_candidate, news_priority
+from .topics import ai_related, editorial_candidate, playback_priority, concrete_news
 
 from bs4 import BeautifulSoup
 import feedparser
@@ -70,10 +70,13 @@ SOURCE_NAV_LABELS = {
     'OpenAI News': 'OpenAI', 'Google DeepMind': 'Gemini',
     'Hugging Face Blog': 'Hugging Face', 'NVIDIA Blog': 'NVIDIA',
     'TechCrunch AI': 'AI行业', 'Simon Willison': 'LLM工具',
-    'Gary Marcus': 'AI观点', 'Dwarkesh Patel': 'AI观点',
-    'Gwern': 'AI观点', 'Max Woolf': 'AI观点', 'Giles Thomas': 'AI观点',
-    'Sean Goedecke': 'AI观点', 'Martin Alderson': 'AI观点',
-    "Where's Your Ed At": 'AI观点', 'LCamtuf': 'AI安全',
+    'Gary Marcus': 'Gary Marcus', 'Dwarkesh Patel': 'Dwarkesh Patel',
+    'Gwern': 'Gwern AI', 'Max Woolf': 'Max Woolf', 'Giles Thomas': 'Giles Thomas',
+    'Sean Goedecke': 'Sean Goedecke', 'Martin Alderson': 'Martin Alderson',
+    "Where's Your Ed At": 'AI产业', 'LCamtuf': 'AI安全',
+    'IT之家': 'IT之家AI', '量子位': '量子位大模型', '雷峰网': '雷峰网AI',
+    '极客公园': '极客公园AI', 'Hugging Face Papers': 'Hugging Face',
+    'arXiv cs.CL': 'LLM论文', 'Transformers Releases': 'Transformers',
 }
 
 
@@ -88,7 +91,7 @@ def _nav_label(title, source_name=''):
     label = ' / '.join(names)
     if len(names) == 2 and sum(2 if '\u4e00' <= c <= '\u9fff' else 1 for c in label) > 12:
         return '模型对比'
-    return label if names else SOURCE_NAV_LABELS.get(source_name, '基础模型')
+    return label if names else SOURCE_NAV_LABELS.get(source_name, '大模型')
 
 
 def classify(title: str, narration: str) -> str:
@@ -522,7 +525,7 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
     # candidates that actually require another request.
     candidates = select_recent(rows, now, hours, max(1, len(rows)), stats)
     if scope == 'all_ai':
-        candidates.sort(key=news_priority)  # Stable: newest first within each priority.
+        candidates.sort(key=playback_priority)  # Stable: newest first within each priority.
     stats['eligible_candidates'] = len(candidates)
     selected_stories = []
     source_selected = {}
@@ -562,6 +565,8 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                 bullets = [translate_to_chinese(bullet) if re.search(r'[A-Za-z]', bullet) else bullet
                            for bullet in source_bullets]
                 # Reject an oversized extract before it can fail the whole video.
+                if config.get('require_concrete_news') and not concrete_news(display_title, bullets):
+                    raise ValueError('摘要缺少具体主体、事件或可说明的变化，不作为新闻入选')
                 from .render import single_page_layout
                 single_page_layout({'bullets': bullets})
                 narration = _spoken_title(display_title) + ''.join(bullets)
@@ -570,7 +575,7 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                 nav_text = ' '.join((row.get('title', ''), row.get('abstract', ''),
                                      row.get('source_name', '')))
                 nav_label = _nav_label(nav_text, row.get('source_name', ''))
-                if nav_label == '基础模型':
+                if nav_label == '大模型':
                     nav_label = ('论文' if kind == 'paper' else
                                  '官方' if kind == 'official_article' else
                                  '模型工具')
@@ -602,6 +607,8 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                 raise ValueError('新闻事件早于本次搜查截止日期或尚未发生，不能用新转载日期替代事件日期')
             stage = 'summary_rejected'
             bullets, narration = _summary(paragraphs, row['title'])
+            if config.get('require_concrete_news') and not concrete_news(row['title'], bullets):
+                raise ValueError('摘要缺少具体主体、事件或可说明的变化，不作为新闻入选')
             public_row = {k: v for k, v in row.items() if k != 'feed_content'}
             story = dict(public_row, id=hashlib.sha256(row['source_url'].encode()).hexdigest()[:16],
                          **event, category=classify(row['title'], narration), nav_label=_nav_label(row['title']) if MODEL_NAMES.search(row['title']) or scope == 'foundation_models' else classify(row['title'], narration), bullets=bullets, narration=narration,

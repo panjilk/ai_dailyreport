@@ -2,7 +2,7 @@ import json
 import subprocess
 import sys
 
-from dailyreport.__main__ import export_text, write_preview
+from dailyreport.__main__ import export_text, require_minimum_video_stories, write_preview
 
 
 def fixture():
@@ -30,6 +30,38 @@ def test_preview_escapes_untrusted_article_titles(tmp_path):
 def test_invalid_limit_fails_before_collection():
     p = subprocess.run([sys.executable, '-m', 'dailyreport', '--limit', '0'], capture_output=True)
     assert p.returncode == 2
+    p = subprocess.run([sys.executable, '-m', 'dailyreport', '--limit', '4'], capture_output=True)
+    assert p.returncode == 2
+
+
+def test_video_requires_at_least_five_qualified_stories():
+    import pytest
+    with pytest.raises(ValueError, match='至少需要 5 条'):
+        require_minimum_video_stories({'stories': [{}] * 4})
+    require_minimum_video_stories({'stories': [{}] * 5})
+
+
+def test_video_preflight_rejects_short_edition_without_creating_output(tmp_path, monkeypatch):
+    from datetime import datetime
+    import dailyreport.__main__ as cli
+    from dailyreport.recency import SHANGHAI
+
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 9, 13, 12, tzinfo=SHANGHAI)
+
+    monkeypatch.setattr(cli, 'datetime', Clock)
+    briefing = fixture()
+    item = briefing['stories'][0]
+    item.update(published='2026-09-13', event_date='2026-09-13')
+    briefing['stories'] = [dict(item, title=f'模型新闻{i}') for i in range(4)]
+    source = tmp_path / 'short.json'
+    source.write_text(json.dumps(briefing), encoding='utf-8')
+    output = tmp_path / 'short-video'
+
+    assert cli.main(['--input', str(source), '--output', str(output)]) == 1
+    assert not output.exists()
 
 
 def test_invalid_pitch_fails_before_collection():

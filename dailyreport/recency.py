@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta, timezone, date
 import re
 from .models import MODEL_NAMES, model_labels
-from .topics import ai_related, news_priority
+from .topics import ai_related, playback_priority
 
 SHANGHAI = timezone(timedelta(hours=8))
 RECENCY_DAYS = 5
@@ -84,7 +84,7 @@ def enforce_recency(briefing, now, hours=None):
         key=lambda s: (_news_moment(s['published'])[0], _news_moment(s['event_date'])[0]),
         reverse=True,
     )
-    briefing['stories'].sort(key=news_priority)
+    briefing['stories'].sort(key=playback_priority)
     briefing['window_days'] = RECENCY_DAYS
     briefing['window_hours'] = hours
     briefing['window_start'] = oldest.isoformat()
@@ -125,7 +125,8 @@ def article_event_evidence(text, published, title='', *, scope='foundation_model
             if not related or (scope != 'all_ai' and uncertain.search(event_clause)):
                 continue
             mentioned = set(model_labels(event_clause))
-            overlap = bool(targets & mentioned)
+            overlap = bool(targets & mentioned or
+                           targets & {'GPT', 'ChatGPT'} and mentioned & {'GPT', 'ChatGPT'})
             if targets and mentioned and not overlap:
                 continue
             if m['relative']:

@@ -18,7 +18,7 @@ from dailyreport.recency import article_event_date, SHANGHAI
     ('书生开源新模型', 'InternLM'), ('百川推出新模型', '百川'),
     ('零一万物发布新模型', '零一万物'), ('讯飞星火升级理解能力', '星火'),
     ('Kimi新版本上线，后续接入办公软件', 'Kimi'),
-    ('新创公司推出大模型', '基础模型'),
+        ('新创公司推出大模型', '大模型'),
 ])
 def test_domestic_updates_and_navigation(title, label):
     assert _model_topic(title)

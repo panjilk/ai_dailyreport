@@ -182,7 +182,7 @@ def test_english_rss_filters_non_ai_posts_and_needs_no_article_request(fetch, _t
     assert story['title'] == '中文机器翻译内容。'
     assert story['content_kind'] == 'article'
     assert story['category'] == '技术洞察'
-    assert story['nav_label'] == '海外观点'
+    assert story['nav_label'] == 'OpenAI'
     assert result['collection_stats']['article_requests'] == 0
     assert result['collection_stats']['off_topic'] == 1
 

@@ -38,6 +38,27 @@ def editorial_candidate(title):
     return not (ROUNDUP.search(title) or PROMOTION.search(title))
 
 
+def concrete_news(title, bullets):
+    """Conservative content gate, not a claim of factual verification.
+
+    Require an identifiable subject and a concrete action/result in the actual
+    summary. A catchy headline or an editorial notice cannot supply evidence.
+    """
+    text = ' '.join(b for b in bullets if not re.match(
+        r'^(?:英文技术博客|官方公告原文|官方版本说明|论文摘要)摘录', b.strip()))
+    subject = MODEL_NAMES.search(text) or re.search(
+        r'\b[A-Z][A-Za-z0-9.-]{2,}\b|阿里|腾讯|百度|小米|小鹏|字节|讯飞|华为|议会|法院', text)
+    action = re.search(
+        r'发布|推出|新增|开源|上线|升级|重置|降价|涨价|出货|下载量|日活|'
+        r'审厂|零部件定点|合作|通过.{0,12}法案|漏洞|修复|'
+        r'训练.{0,15}(?:模型|分类器)|(?:提升|降低|达到|超过).{0,20}\d|'
+        r'\b(?:released?|launched?|introduced?|downloads|benchmark|pricing)\b', text, re.I)
+    detail = re.search(
+        r'功能|支持|用于|帮助|权限|数据|工具|模型|版本|能力|审查|认证|审计|'
+        r'量产|分类器|用户|下载量|日活|市场份额|\d|\b(?:model|tool|users|API)\b', text, re.I)
+    return bool(subject and action and detail)
+
+
 def _has_versioned_model_name(title):
     """Recognize direct versions and named variants explicitly called models."""
     for match in MODEL_NAMES.finditer(title):
@@ -49,6 +70,8 @@ def _has_versioned_model_name(title):
                 r'(?:(?:语音转文本|语音识别|语音|多模态|文本|图像|视频|语言|基础|大)?模型'
                 r'|(?:(?:speech-to-text|speech|language|foundation)\s+)?model\b)',
                 suffix, re.I):
+            return True
+        if re.match(r'\s+(?:Opus|Fable|Mythos)\s+\d+(?:\.\d+)*(?![A-Za-z0-9.])', suffix, re.I):
             return True
     return False
 
@@ -84,3 +107,26 @@ def news_priority(story):
     if story.get('content_kind') in ('paper', 'release'):
         return 2
     return 2
+
+
+def playback_priority(story):
+    """Put news about a named model family before wider AI coverage."""
+    title = story.get('title', '')
+    match = MODEL_NAMES.search(title)
+    if not match and story.get('source_title'):
+        title = story['source_title']
+        match = MODEL_NAMES.search(title)
+    if match:
+        preceding = title[:match.start()]
+        # A comparison target does not make the story news about that model.
+        comparison_only = bool(re.search(r'(?:超过|超越|对比|相比|比|outpac(?:e|ing)|versus|\bvs\.?\b)\s*$', preceding, re.I))
+        model_focused = not comparison_only and (
+            _is_model_milestone(title) or
+            bool(re.search(r'模型|大模型|推理|编程|多模态|语音|视频|智能体|Agent|发布|推出|新增|升级|更新|功能|能力|API|开源|上线|用量|额度', title, re.I)) or
+            (match.start() <= 2 and bool(re.search(r'AI|人工智能|成果|产品|研究|安全', title[match.end():], re.I)))
+        )
+    else:
+        model_focused = False
+    return (0 if model_focused else 1,
+            0 if story.get('category') == '模型发布' else 1,
+            news_priority(story))

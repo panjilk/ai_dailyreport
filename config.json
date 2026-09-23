@@ -4,11 +4,12 @@
   "speech_rate": 10,
   "speech_pitch_hz": -8,
   "speech_warmth": true,
-  "scene_lead_in_seconds": 1.0,
+  "scene_lead_in_seconds": 0.25,
   "background_music_volume": 0.42,
   "transition_click_volume": 0.32,
   "edition_start_date": "2026-09-21",
   "topic_scope": "all_ai",
+  "require_concrete_news": true,
   "article_request_budget": 40,
   "sources": [
     {
@@ -41,6 +42,14 @@
       "type": "rss",
       "ai_only": false,
       "use_feed_content": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "小米AI实验室",
+      "url": "https://hyper.ai/feed",
+      "type": "rss",
+      "ai_only": true,
       "max_stories": 2,
       "enabled": true
     },
@@ -80,6 +89,24 @@
     {
       "name": "Google DeepMind",
       "url": "https://deepmind.google/blog/rss.xml",
+      "type": "english_rss",
+      "content_kind": "official_article",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "Anthropic News",
+      "url": "https://www.anthropic.com/news/rss.xml",
+      "type": "english_rss",
+      "content_kind": "official_article",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "Meta AI",
+      "url": "https://ai.meta.com/blog/rss/",
       "type": "english_rss",
       "content_kind": "official_article",
       "ai_only": true,
