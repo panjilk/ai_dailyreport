@@ -58,6 +58,23 @@ def test_release_date_and_stable_only():
     assert rows[0]['event_date'] == entry['published_at']
 
 
+def test_official_changelog_extracts_dated_model_release_once():
+    url = 'https://longcat.chat/platform/docs/ChangeLog.html'
+    html = '''<h2>Version: 2026-09-25</h2>
+    <h3 id="longcat-new">LongCat-2.5-Preview Now Available</h3>
+    <p>LongCat-2.5-Preview adds image understanding and coding capabilities.</p>
+    <ul><li>Supports visual reasoning and cross-modal questions.</li></ul>
+    <h2>Version: 2026-09-25</h2>
+    <h3>LongCat-2.5-Preview Now Available</h3>
+    <p>LongCat-2.5-Preview adds image understanding and coding capabilities.</p>
+    <h2>Version: 2026-09-10</h2><h3>Enterprise Services</h3><p>Billing changes.</p>'''
+    rows = list(source_rows({'type': 'official_changelog', 'url': url}, html))
+    assert len(rows) == 1
+    assert rows[0]['event_date'] == '2026-09-25T12:00:00+08:00'
+    assert rows[0]['source_url'].endswith('#longcat-new')
+    assert 'visual reasoning' in rows[0]['abstract']
+
+
 @patch('dailyreport.collect.translate_to_chinese', side_effect=chinese_translation)
 @patch('dailyreport.collect._fetch')
 def test_english_paper_reaches_briefing_without_chinese_regex(fetch, _translate):

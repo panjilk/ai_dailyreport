@@ -108,6 +108,21 @@ def test_complete_model_summary_fits_exactly_one_page():
     assert sum(len(x) * size * 1.4 + 22 for x in lines) <= 380
 
 
+def test_story_cards_advance_without_hiding_other_facts():
+    from dailyreport.render import story_image
+    story = {'title': '美团发布 LongCat-2.5-Preview 模型', 'category': '模型发布',
+             'published': '2026-09-25', 'event_date': '2026-09-25',
+             'source_name': 'LongCat API',
+             'source_url': 'https://longcat.chat/platform/docs/ChangeLog.html',
+             'bullets': ['新增图像理解能力。', '支持代码生成。', '兼容主流开发工具。']}
+    briefing = {'date': '2026-09-27', 'stories': [story]}
+    first = story_image(briefing, story, 1, active_bullet=0)
+    last = story_image(briefing, story, 1, active_bullet=2)
+    assert first.getpixel((135, 400)) != last.getpixel((135, 400))
+    assert first.getpixel((135, 700)) != last.getpixel((135, 700))
+    assert first.getpixel((320, 105)) != (234, 233, 225)
+
+
 def test_oversized_summary_requests_rewrite_instead_of_paging_or_truncating():
     import pytest
     from dailyreport.render import paginate_story

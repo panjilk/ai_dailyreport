@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+from urllib.parse import urlsplit
 import wave
 
 import imageio_ffmpeg
@@ -228,7 +229,10 @@ def _compact_video_fact(text, max_chars=76):
     text = re.sub(r'\s+([，。！？；：])', r'\1', text).strip()
     if len(text) <= max_chars:
         return text.rstrip('。！？') + '。'
-    clauses = [part.strip(' ，,；;。') for part in re.split(r'[，,；;]', text) if part.strip(' ，,；;。')]
+    # Machine-translated RSS summaries may use colons or hyphens where
+    # Chinese extractive summaries use commas. Treat these as clause
+    # boundaries so one malformed long sentence cannot abort an edition.
+    clauses = [part.strip(' ，,；;。:：—-') for part in re.split(r'[，,；;:：—-]', text) if part.strip(' ，,；;。:：—-')]
     while len(clauses) > 1 and re.match(r'^(?:今天|本周|近日|日前|在.{0,35}(?:会上|专场上|期间|活动中))$', clauses[0]):
         clauses.pop(0)
     chosen = []
@@ -330,11 +334,14 @@ def base_canvas(briefing, active=None):
     d.text((110, 22), 'AI DAILY', font=font(28, True), fill=INK)
     d.text((296, 26), '/  AI 综合日报', font=font(23), fill=MUTED)
     d.text((1550, 26), briefing['date'] + '   /   中文版', font=font(23), fill=MUTED)
+    active_tab = (0 if active in ('要闻', '模型发布', '开发生态', '技术洞察') else
+                  1 if active == '产品应用' else 2 if active == '行业动态' else None)
     for i, label in enumerate(['模型迭代优先', '产品与用量', '政策与行业']):
         x = i * 640
-        d.rectangle((x, 84, x + 640, 150), fill='#EAE9E1')
+        selected = i == active_tab
+        d.rectangle((x, 84, x + 640, 150), fill=ACCENT if selected else '#EAE9E1')
         d.line((x, 84, x, 150), fill='#D8DAD1', width=1)
-        d.text((x + 320, 113), label, anchor='mm', font=font(26), fill=INK)
+        d.text((x + 320, 113), label, anchor='mm', font=font(26), fill='white' if selected else INK)
     return im
 
 
@@ -358,7 +365,8 @@ def overview_image(briefing):
     return im
 
 
-def story_image(briefing, story, index, bullets=None, page_no=1, page_total=1):
+def story_image(briefing, story, index, bullets=None, page_no=1, page_total=1,
+                active_bullet=0):
     im = base_canvas(briefing, story['category'])
     d = ImageDraw.Draw(im)
     color = COLORS[CATEGORIES.index(story['category'])]
@@ -368,14 +376,40 @@ def story_image(briefing, story, index, bullets=None, page_no=1, page_total=1):
     displayed_date = news_date(story.get('event_date', story['published'])).isoformat()
     d.text((1780, 240), '事件日期 ' + displayed_date, anchor='rt', font=font(22), fill=MUTED)
     fitted(d, story.get('display_title') or story['title'], (130, 290), 1640, 1, 54, bold=True)
-    size, lines = single_page_layout(story)
-    y = 400
-    for part in lines:
-        d.ellipse((137, y + 16, 147, y + 26), fill=color)
-        for line in part:
-            d.text((170, y), line, font=font(size), fill=INK)
-            y += size * 1.4
-        y += 22
+    facts = list(bullets if bullets is not None else story['bullets'])
+    if not facts:
+        raise ValueError('资讯缺少画面要点')
+    # Facts remain readable at all times; the current one advances with the
+    # speech subtitle, so a single static slide does not linger for the story.
+    card_top, card_bottom = 389, 832
+    row_height = (card_bottom - card_top) / len(facts)
+    for fact_index, fact in enumerate(facts):
+        y0 = round(card_top + fact_index * row_height)
+        y1 = round(card_top + (fact_index + 1) * row_height - 12)
+        selected = fact_index == active_bullet
+        d.rounded_rectangle((130, y0, 1788, y1), radius=16,
+                            fill='#F7EEE8' if selected else '#F5F5F1')
+        d.rounded_rectangle((130, y0, 140, y1), radius=5,
+                            fill=color if selected else '#CAD0CC')
+        d.text((166, y0 + 16), f'{fact_index + 1:02}', font=font(25, True),
+               fill=color if selected else MUTED)
+        available_height = y1 - y0 - 18
+        for size in range(33, 23, -2):
+            face = font(size, selected)
+            lines = wrap_text(fact, face, 1490)
+            if (len(lines) * size * 1.27 <= available_height and
+                    not any(re.fullmatch(r'[，。！？；：,.!?;:]+', line) for line in lines)):
+                break
+        else:
+            raise ValueError('新闻要点过长，无法放入分镜卡片，请缩短摘要。')
+        line_y = y0 + (y1 - y0 - len(lines) * size * 1.27) / 2
+        for line in lines:
+            d.text((235, line_y), line, font=face, fill=INK)
+            line_y += size * 1.27
+    source = story.get('source_name', '官方来源')
+    domain = urlsplit(story['source_url']).hostname or ''
+    fitted(d, '来源  ' + source + ('  ·  ' + domain if domain else ''),
+           (135, 853), 1640, 1, 22, fill=MUTED)
     return im
 
 
@@ -736,16 +770,25 @@ def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='a
             cues = subtitle_cues(job['text'], words, unit_frames)
             if ''.join(c['text'] for c in cues) != job['text']:
                 raise ValueError('字幕没有完整覆盖口播。')
-            for cue in cues:
+            for cue_index, cue in enumerate(cues):
                 number = len(timeline)
                 start = (cursor_frames + lead_frames + cue['start_frame']) / 24
                 end = (cursor_frames + lead_frames + cue['end_frame']) / 24
                 srt.append(f'{len(srt) + 1}\n{srt_time(start)} --> {srt_time(end)}\n{cue["text"]}\n')
                 image_path = work / f'frame-{number:03}.png'
-                frame_with_subtitle(scenes[job['scene']]['image'], cue['text'], n + 1, len(jobs), job['chapter'], count, navigation_labels(briefing)).save(image_path)
+                scene = scenes[job['scene']]
+                focus = None
+                image = scene['image']
+                if scene['bullets']:
+                    focus = round(cue_index * (len(scene['bullets']) - 1) / max(1, len(cues) - 1))
+                    image = story_image(briefing, briefing['stories'][job['chapter'] - 1],
+                                        job['chapter'], scene['bullets'], scene['page'],
+                                        scene['page_count'], active_bullet=focus)
+                frame_with_subtitle(image, cue['text'], n + 1, len(jobs), job['chapter'], count, navigation_labels(briefing)).save(image_path)
                 concat += [f"file 'frame-{number:03}.png'", 'option framerate 24', f'duration {(cue["end_frame"] - cue["start_frame"]) / 24:.9f}']
                 timeline.append({'start': round(start, 4), 'end': round(end, 4), 'scene': job['scene'],
-                                 'chapter': job['chapter'], 'unit': n, 'text': cue['text']})
+                                 'chapter': job['chapter'], 'unit': n, 'text': cue['text'],
+                                 'focus_bullet': focus})
             speech_units.append({'text': job['text'], 'scene': job['scene'], 'chapter': job['chapter'],
                                  'start': round(cursor_frames / 24, 4),
                                  'audio_start': round((cursor_frames + lead_frames) / 24, 4),

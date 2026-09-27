@@ -177,14 +177,16 @@ def _date(value):
         return None
 
 
-def _canonical(url):
+def _canonical(url, keep_fragment=False):
     try:
         parts = urlsplit(url.strip())
         if parts.scheme.lower() not in ('http', 'https') or not parts.hostname or parts.username or parts.password:
             return None
         query = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True)
                  if not k.lower().startswith('utm_') and k.lower() not in TRACKING]
-        return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path or '/', urlencode(sorted(query)), ''))
+        fragment = parts.fragment if keep_fragment and re.fullmatch(r'[A-Za-z0-9_-]+', parts.fragment) else ''
+        return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path or '/',
+                           urlencode(sorted(query)), fragment))
     except (AttributeError, ValueError):
         return None
 
@@ -199,7 +201,8 @@ def select_recent(items: list[dict], now: datetime, hours: int, limit: int, stat
     eligible = []
     for row in items:
         published = _date(row.get('published'))
-        url = _canonical(row.get('source_url', row.get('url', row.get('link', ''))))
+        url = _canonical(row.get('source_url', row.get('url', row.get('link', ''))),
+                         keep_fragment=row.get('content_kind') == 'official_model_release')
         title = re.sub(r'\s+', ' ', str(row.get('title') or '')).strip()
         if published is None or not url or not title:
             stats['invalid_metadata'] += 1
@@ -478,7 +481,7 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
         name, url = source.get('name', 'RSS'), source.get('url', '')
         try:
             content = _fetch(url)
-            if source.get('type') in ('hf_papers', 'arxiv', 'github_releases', 'english_rss'):
+            if source.get('type') in ('hf_papers', 'arxiv', 'github_releases', 'english_rss', 'official_changelog'):
                 for row in source_rows(source, content):
                     stats['feed_entries'] += 1
                     if scope == 'foundation_models' and not english_topic(row['title'], row['abstract']):
@@ -560,7 +563,15 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                 if moment is None or not max(now - timedelta(hours=hours), window_start(now)) <= moment <= now:
                     raise ValueError('论文首次提交或正式版本发布日期不在本次搜查窗口内')
                 stage = 'summary_rejected'
-                source_bullets = english_summary(original, kind)
+                if kind == 'official_model_release':
+                    model_name = re.sub(r'\s+(?:Now Available|Release|Launched?).*$',
+                                        '', row['title'], flags=re.I).strip()
+                    if not model_name or not row.get('feature_points'):
+                        raise ValueError('官方模型更新缺少模型名称或具体特性')
+                    source_bullets = [f'{model_name} model was released on {moment.date().isoformat()}.']
+                    source_bullets.extend(row['feature_points'][:2])
+                else:
+                    source_bullets = english_summary(original, kind)
                 display_title = translate_to_chinese(row['title'])
                 bullets = [translate_to_chinese(bullet) if re.search(r'[A-Za-z]', bullet) else bullet
                            for bullet in source_bullets]
@@ -570,10 +581,12 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                 from .render import single_page_layout
                 single_page_layout({'bullets': bullets})
                 narration = _spoken_title(display_title) + ''.join(bullets)
-                category = ('要闻' if kind == 'official_article' else
+                category = ('模型发布' if kind == 'official_model_release' else
+                            '要闻' if kind == 'official_article' else
                             '技术洞察' if kind in ('paper', 'article') else '开发生态')
-                nav_text = ' '.join((row.get('title', ''), row.get('abstract', ''),
-                                     row.get('source_name', '')))
+                nav_text = (row['title'] if kind == 'official_model_release' else
+                            ' '.join((row.get('title', ''), row.get('abstract', ''),
+                                      row.get('source_name', ''))))
                 nav_label = _nav_label(nav_text, row.get('source_name', ''))
                 if nav_label == '大模型':
                     nav_label = ('论文' if kind == 'paper' else

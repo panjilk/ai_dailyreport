@@ -96,6 +96,14 @@
       "enabled": true
     },
     {
+      "name": "美团 LongCat 官方更新",
+      "url": "https://longcat.chat/platform/docs/ChangeLog.html",
+      "type": "official_changelog",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
       "name": "Anthropic News",
       "url": "https://www.anthropic.com/news/rss.xml",
       "type": "english_rss",

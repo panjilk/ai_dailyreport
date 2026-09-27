@@ -100,7 +100,48 @@ def normalized_feed_date(value):
 
 def source_rows(source, content):
     kind = source['type']
-    if kind == 'sitemap':
+    if kind == 'official_changelog':
+        # Official documentation has no RSS feed. Treat dated release sections
+        # as entries; repeated localized sections must not become duplicate news.
+        soup = BeautifulSoup(content, 'html.parser')
+        seen = set()
+        for heading in soup.find_all('h2'):
+            match = re.search(r'Version:\s*(\d{4}-\d{2}-\d{2})', heading.get_text(' ', strip=True), re.I)
+            if not match:
+                continue
+            released = match.group(1)
+            for subheading in heading.find_next_siblings():
+                if subheading.name == 'h2':
+                    break
+                if subheading.name != 'h3':
+                    continue
+                title = subheading.get_text(' ', strip=True).replace('\u200b', '').strip()
+                if not MODEL_NAMES.search(title) or not re.search(
+                        r'now available|release|launch', title, re.I):
+                    continue
+                key = (released, title.casefold())
+                if key in seen:
+                    continue
+                seen.add(key)
+                sections, feature_points = [], []
+                for sibling in subheading.find_next_siblings():
+                    if sibling.name in ('h2', 'h3'):
+                        break
+                    if sibling.name in ('p', 'ul', 'ol'):
+                        sections.append(sibling.get_text(' ', strip=True))
+                        if sibling.name in ('ul', 'ol'):
+                            feature_points.extend(li.get_text(' ', strip=True)
+                                                  for li in sibling.find_all('li', recursive=False))
+                abstract = ' '.join(sections).strip()
+                if len(abstract) < 50:
+                    continue
+                yield dict(title=title, published=released + 'T12:00:00+08:00',
+                           event_date=released + 'T12:00:00+08:00',
+                           event_date_evidence='官方更新日志 Version: ' + released,
+                           source_url=source['url'] + '#' + (subheading.get('id') or heading.get('id', '')),
+                           abstract=abstract, feature_points=feature_points,
+                           content_kind='official_model_release')
+    elif kind == 'sitemap':
         root = BeautifulSoup(content, 'xml')
         for item in root.find_all('url')[:500]:
             loc = item.find('loc')
