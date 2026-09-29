@@ -6,6 +6,8 @@ import os
 import tempfile
 import time
 import warnings
+import threading
+from .concurrency import run_ordered
 from pathlib import Path
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -20,6 +22,9 @@ from .models import MODEL_NAMES
 TRANSLATION_URL = 'https://api.deepseek.com/v1/chat/completions'
 TRANSLATION_MODEL = 'deepseek-chat'
 CACHE_PATH = Path(__file__).resolve().parent.parent / 'data' / 'translation_cache.json'
+_cache_lock = threading.RLock()
+_api_slots = threading.BoundedSemaphore(8)
+_pending_cache = {}
 GLOSSARY_PATH = Path(__file__).resolve().parent.parent / 'data' / 'glossary.json'
 
 
@@ -42,6 +47,13 @@ def _translation_chunks(text, limit=1200):
 
 
 def _load_translation_cache():
+    with _cache_lock:
+        cache = _read_translation_cache() if CACHE_PATH.exists() else {}
+        cache.update(_pending_cache.get(CACHE_PATH, {}))
+        return cache
+
+
+def _read_translation_cache():
     try:
         cache = json.loads(CACHE_PATH.read_text(encoding='utf-8'))
         if not isinstance(cache, dict) or any(
@@ -57,6 +69,11 @@ def _load_translation_cache():
 
 
 def _save_translation_cache(cache):
+    with _cache_lock:
+        return _write_translation_cache(cache)
+
+
+def _write_translation_cache(cache):
     # 同目录临时文件与原子替换，避免中途写入留下损坏的 JSON。
     CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
     while len(cache) > 5000:
@@ -75,6 +92,18 @@ def _save_translation_cache(cache):
             temporary.unlink(missing_ok=True)
 
 
+def flush_translation_cache():
+    """采集结束时合并落盘，避免每条译文都重写整个缓存。"""
+    with _cache_lock:
+        pending = _pending_cache.get(CACHE_PATH, {})
+        if not pending:
+            return
+        cache = _read_translation_cache() if CACHE_PATH.exists() else {}
+        cache.update(pending)
+        _write_translation_cache(cache)
+        _pending_cache.pop(CACHE_PATH, None)
+
+
 def _glossary_terms():
     try:
         data = json.loads(GLOSSARY_PATH.read_text(encoding='utf-8'))
@@ -87,7 +116,7 @@ def _glossary_terms():
         return []
 
 
-def translate_to_chinese(text, request_post=None, *, on_event=None):
+def translate_to_chinese(text, request_post=None, *, on_event=None, workers=1, defer_cache_write=False):
     """翻译英文展示文本；缓存命中免请求，失败时明确报错。"""
     value = re.sub(r'\s+', ' ', str(text or '')).strip()
     if not value or not re.search(r'[A-Za-z]', value):
@@ -102,19 +131,20 @@ def translate_to_chinese(text, request_post=None, *, on_event=None):
     if not api_key:
         raise ValueError('缺少 DEEPSEEK_API_KEY，无法翻译英文条目')
     terms = _glossary_terms()
-    direct = proxy = None
-    if request_post is None:
-        direct = requests.Session()
-        direct.trust_env = False
-        proxy = requests.Session()
-        request_post = direct.post
     headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
     system = ('你是科技新闻英译中译者。只输出译文，不要解释，不要加引号。'
               '术语表里的名称保留原文；保持数字、百分比、版本号和产品名不变；'
               '不得添加原文没有的信息。术语表：' + json.dumps(terms, ensure_ascii=False))
-    translated = []
-    try:
-        for chunk in _translation_chunks(value):
+    def translate_chunk(chunk):
+        direct = proxy = None
+        post = request_post
+        if post is None:
+            direct = requests.Session()
+            direct.trust_env = False
+            proxy = requests.Session()
+            post = direct.post
+        events = []
+        try:
             required = [term for term in terms if term in chunk]
             result = ''
             missing = []
@@ -129,9 +159,9 @@ def translate_to_chinese(text, request_post=None, *, on_event=None):
                 # 初次请求加三次退避重试。直连网络失败时额外尝试一次环境代理。
                 for attempt in range(4):
                     try:
-                        if on_event:
-                            on_event('api_call', '')
-                        response = request_post(TRANSLATION_URL, headers=headers,
+                        events.append(('api_call', ''))
+                        with _api_slots:
+                            response = post(TRANSLATION_URL, headers=headers,
                                                 json=body, timeout=30)
                         response.raise_for_status()
                         result = str(response.json()['choices'][0]['message']['content']).strip()
@@ -139,9 +169,9 @@ def translate_to_chinese(text, request_post=None, *, on_event=None):
                     except (requests.Timeout, requests.ConnectionError) as exc:
                         if direct is not None and proxy is not None:
                             try:
-                                if on_event:
-                                    on_event('api_call', '')
-                                response = proxy.post(TRANSLATION_URL, headers=headers,
+                                events.append(('api_call', ''))
+                                with _api_slots:
+                                    response = proxy.post(TRANSLATION_URL, headers=headers,
                                                       json=body, timeout=30)
                                 response.raise_for_status()
                                 result = str(response.json()['choices'][0]['message']['content']).strip()
@@ -162,21 +192,41 @@ def translate_to_chinese(text, request_post=None, *, on_event=None):
                 missing = [term for term in required if term not in result]
                 if not missing:
                     break
-            if missing and on_event:
-                on_event('warning', '翻译术语未保留原文：' + '、'.join(missing))
-            translated.append(result)
-        output = ''.join(translated)
-        cache[digest] = {'zh': output, 'model': TRANSLATION_MODEL,
-                         'ts': datetime.now(timezone.utc).isoformat()}
-        try:
-            _save_translation_cache(cache)
-        except OSError as exc:
-            warnings.warn(f'翻译缓存写入失败：{exc}', RuntimeWarning, stacklevel=2)
-        return output
-    finally:
-        if direct is not None:
-            direct.close()
-            proxy.close()
+            if missing:
+                events.append(('warning', '翻译术语未保留原文：' + '、'.join(missing)))
+            return result, events, None
+        except Exception as exc:
+            return None, events, exc
+        finally:
+            if direct is not None:
+                direct.close()
+                proxy.close()
+    chunks = _translation_chunks(value)
+    results = run_ordered(chunks, translate_chunk, min(workers, 8))
+    translated = []
+    for result, events, exc in results:
+        for kind, detail in events:
+            if on_event:
+                on_event(kind, detail)
+        if exc is not None:
+            raise exc
+        translated.append(result)
+    output = ''.join(translated)
+    with _cache_lock:
+        entry = {'zh': output, 'model': TRANSLATION_MODEL,
+                 'ts': datetime.now(timezone.utc).isoformat()}
+        if defer_cache_write:
+            _pending_cache.setdefault(CACHE_PATH, {})[digest] = entry
+        else:
+            cache = _read_translation_cache() if CACHE_PATH.exists() else {}
+            cache.update(_pending_cache.get(CACHE_PATH, {}))
+            cache[digest] = entry
+            try:
+                _write_translation_cache(cache)
+                _pending_cache.pop(CACHE_PATH, None)
+            except OSError as exc:
+                warnings.warn(f'翻译缓存写入失败：{exc}', RuntimeWarning, stacklevel=2)
+    return output
 
 
 

@@ -5,21 +5,27 @@ from email.utils import parsedate_to_datetime
 import hashlib
 import math
 import re
+import threading
+import time
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import xml.etree.ElementTree as ET
 
 from .recency import RECENCY_DAYS, window_start, article_event_evidence, news_date
 from .international import (english_blog_candidate, english_summary, english_topic,
-                            paper_details, source_rows, translate_to_chinese)
+                            paper_details, source_rows, translate_to_chinese, flush_translation_cache)
 from .models import MODEL_NAMES, model_labels
 from .topics import ai_related, editorial_candidate, playback_priority, concrete_news
 from .broadcast_log import recent_entries, url_fingerprint
 from .source_health import load_health, record_result, save_health
+from .concurrency import collection_workers, run_ordered
 
 from bs4 import BeautifulSoup
 import feedparser
 import requests
 
+
+_feed_thread = threading.local()
+_health_lock = threading.Lock()
 
 SHANGHAI = timezone(timedelta(hours=8), 'Asia/Shanghai')
 AI_TERMS = re.compile(r'人工智能|大模型|语言模型|生成式|机器学习|深度学习|神经网络|智能体|具身智能|扩散模型|ChatGPT|OpenAI|DeepSeek|Claude|Gemini|通义千问|(?<![a-z0-9_])(?:AI|LLM|GPT(?:-\d+)?)(?![a-z0-9_])', re.I)
@@ -229,7 +235,7 @@ def select_recent(items: list[dict], now: datetime, hours: int, limit: int, stat
 
 def _fetch(url):
     # Limit each response and avoid streaming an unbounded page into memory.
-    with requests.get(url, timeout=15, stream=True, headers={'User-Agent': 'AI-DailyReport/1.0 (RSS reader)'}) as response:
+    with (getattr(_feed_thread, 'session', None) or requests).get(url, timeout=15, stream=True, headers={'User-Agent': 'AI-DailyReport/1.0 (RSS reader)'}) as response:
         response.raise_for_status()
         chunks, size = [], 0
         for chunk in response.iter_content(65536):
@@ -456,6 +462,8 @@ def _summary(paragraphs, title):
 
 def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, health_path=None) -> dict:
     """Fetch enabled sources; fail explicitly if no eligible extract survives."""
+    started = time.perf_counter()
+    workers = collection_workers(config)
     _validate(now, hours, limit)
     event_cutoff_date = max(now - timedelta(hours=hours), window_start(now)).astimezone(SHANGHAI).date()
     today = now.astimezone(SHANGHAI).date()
@@ -483,44 +491,44 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
     health, health_warnings = load_health(health_path) if health_path else ({}, [])
     errors.extend(health_warnings)
     stale_sources = []
-    for source in config.get('sources', []):
-        if not source.get('enabled', True):
-            continue
+    def fetch_source(source):
         name, url = source.get('name', 'RSS'), source.get('url', '')
+        source_rows_out, feed_entries, off_topic = [], 0, 0
+        if getattr(_feed_thread, 'session', None) is None:
+            _feed_thread.session = requests.Session()
         try:
+
             content = _fetch(url)
             if source.get('type') in ('hf_papers', 'arxiv', 'github_releases', 'english_rss', 'official_changelog'):
                 for row in source_rows(source, content):
-                    stats['feed_entries'] += 1
+                    feed_entries += 1
                     if scope == 'foundation_models' and not english_topic(row['title'], row['abstract']):
-                        stats['off_topic'] += 1
+                        off_topic += 1
                         continue
                     if (scope == 'all_ai' and source.get('type') == 'english_rss'
                             and not source.get('ai_only', False)
                             and not english_blog_candidate(row['title'], row['abstract'])):
-                        stats['off_topic'] += 1
+                        off_topic += 1
                         continue
-                    rows.append(dict(row, source_name=name))
-                if health_path:
-                    record_result(health, name, checked=now.isoformat())
-                continue
+                    source_rows_out.append(dict(row, source_name=name))
+                return source_rows_out, feed_entries, off_topic, None
             root = ET.fromstring(content)
             if root.tag.rsplit('}', 1)[-1].lower() not in ('rss', 'feed', 'rdf'):
                 raise ValueError('response is not RSS/Atom XML')
             feed = feedparser.parse(content)
             for entry in feed.entries[:500]:
-                stats['feed_entries'] += 1
+                feed_entries += 1
                 title = BeautifulSoup(entry.get('title', ''), 'html.parser').get_text(' ', strip=True)
                 description = BeautifulSoup(entry.get('summary', ''), 'html.parser').get_text(' ', strip=True)
                 if not editorial_candidate(title):
-                    stats['off_topic'] += 1
+                    off_topic += 1
                     continue
                 if scope == 'foundation_models' and not _model_topic(title):
-                    stats['off_topic'] += 1
+                    off_topic += 1
                     continue
                 if scope == 'all_ai' and not source.get('ai_only', False) and not (
                         ai_related(title) or ai_related(description[:300])):
-                    stats['off_topic'] += 1
+                    off_topic += 1
                     continue
                 # Atom may only provide updated; event evidence is still mandatory.
                 row = dict(title=title, source_name=name, source_url=entry.get('link', ''),
@@ -530,18 +538,35 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
                     embedded = content_blocks[0].get('value', '') if content_blocks else entry.get('summary', '')
                     if embedded:
                         row['feed_content'] = embedded
-                rows.append(row)
-            if health_path:
-                record_result(health, name, checked=now.isoformat())
+                source_rows_out.append(row)
         except (requests.RequestException, OSError, ValueError, ET.ParseError) as exc:
-            stats['source_failures'] += 1
-            errors.append(f'{name} ({url}): {exc}')
-            if health_path and record_result(health, name, exc, now.isoformat()):
-                warning = f'[源疑似失效] {name}：连续失败 {health[name]["consecutive_failures"]} 次：{exc}'
-                print(warning, flush=True)
-                stale_sources.append(dict(name=name, url=url, **health[name]))
+            return source_rows_out, feed_entries, off_topic, exc
+        return source_rows_out, feed_entries, off_topic, None
+
+    enabled_sources = [source for source in config.get('sources', []) if source.get('enabled', True)]
+    for source, result in zip(enabled_sources, run_ordered(enabled_sources, fetch_source, workers)):
+        name, url = source.get('name', 'RSS'), source.get('url', '')
+        if isinstance(result, Exception):
+            result = ([], 0, 0, result)
+        source_rows_out, feed_entries, off_topic, exc = result
+        rows.extend(source_rows_out)
+        stats['feed_entries'] += feed_entries
+        stats['off_topic'] += off_topic
+        with _health_lock:
+            if exc is None:
+                if health_path:
+                    record_result(health, name, checked=now.isoformat())
+            else:
+                stats['source_failures'] += 1
+                errors.append(f'{name} ({url}): {exc}')
+                if health_path and record_result(health, name, exc, now.isoformat()):
+                    warning = f'[源疑似失效] {name}：连续失败 {health[name]["consecutive_failures"]} 次：{exc}'
+                    print(warning, flush=True)
+                    stale_sources.append(dict(name=name, url=url, **health[name]))
     if health_path:
-        save_health(health_path, health)
+        with _health_lock:
+            save_health(health_path, health)
+    feeds_done = time.perf_counter()
     # Scan the complete eligible pool; an exhausted article budget only blocks
     # candidates that actually require another request.
     candidates = select_recent(rows, now, hours, max(1, len(rows)), stats)
@@ -565,6 +590,7 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
                 fresh.append(row)
         candidates = fresh
     selected_stories = []
+    translation_seconds = [0.0]
     source_selected = {}
     parked_candidates = {}
     considered, attempted, budget_blocked = set(), set(), set()
@@ -583,7 +609,7 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
 
     def translate_copy(value):
         try:
-            return translate_to_chinese(value, on_event=translation_event)
+            return translate_to_chinese(value, on_event=translation_event, defer_cache_write=True)
         except (requests.RequestException, OSError, ValueError):
             stats['translation_failures'] += 1
             raise
@@ -625,9 +651,36 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
                     source_bullets.extend(row['feature_points'][:2])
                 else:
                     source_bullets = english_summary(original, kind)
-                display_title = translate_copy(row['title'])
-                bullets = [translate_copy(bullet) if re.search(r'[A-Za-z]', bullet) else bullet
-                           for bullet in source_bullets]
+                translation_started = time.perf_counter()
+                values = [row['title'], *source_bullets]
+                if workers == 1:
+                    translated = [translate_copy(value) for value in values]
+                else:
+                    def translate_item(item):
+                        local_events = []
+                        try:
+                            value = translate_to_chinese(item, on_event=lambda kind, detail: local_events.append((kind, detail)), workers=workers, defer_cache_write=True)
+                            return value, local_events, None
+                        except (requests.RequestException, OSError, ValueError) as exc:
+                            return None, local_events, exc
+                    # 相同文本依照原顺序执行，保持缓存命中与请求计数。
+                    translated = [None] * len(values)
+                    pending = [(i, value) for i, value in enumerate(values) if i == values.index(value)]
+                    results = run_ordered(pending, lambda pair: translate_item(pair[1]), min(workers, 8))
+                    for (i, _), result in zip(pending, results):
+                        translated[i] = result
+                    for i, value in enumerate(values):
+                        if translated[i] is None:
+                            translated[i] = translate_item(value)
+                        output, events, exc = translated[i]
+                        for kind, detail in events:
+                            translation_event(kind, detail)
+                        if exc is not None:
+                            stats['translation_failures'] += 1
+                            raise exc
+                        translated[i] = output
+                display_title, *bullets = translated
+                translation_seconds[0] += time.perf_counter() - translation_started
                 # Reject an oversized extract before it can fail the whole video.
                 if config.get('require_concrete_news') and not concrete_news(display_title, bullets):
                     raise ValueError('摘要缺少具体主体、事件或可说明的变化，不作为新闻入选')
@@ -750,6 +803,15 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
     stats['selected'] = len(stories)
     stats['unexamined_candidates'] = len(candidates) - len(considered)
     stats['budget_exhausted'] = bool(budget_blocked) and len(stories) < limit
+    try:
+        flush_translation_cache()
+    except OSError:
+        pass  # 缓存不可写不改变已产生的选题结果。
+    total_seconds = time.perf_counter() - started
+    stats['timings'] = dict(feeds_seconds=round(feeds_done - started, 3),
+                            articles_seconds=round(total_seconds - (feeds_done - started) - translation_seconds[0], 3),
+                            translation_seconds=round(translation_seconds[0], 3),
+                            total_seconds=round(total_seconds, 3))
     if not stories:
         raise RuntimeError('没有可用资讯：指定窗口内无符合条件且正文可抽取的文章。筛选统计：' + str(stats) + '；'.join(errors))
     date = now.astimezone(SHANGHAI).date().isoformat()

@@ -52,6 +52,7 @@ def export_text(briefing, output):
     if briefing.get('collection_errors'):
         md += ['## 采集记录', '', *['- ' + x for x in briefing['collection_errors']], '']
     if briefing.get('collection_stats'):
+        timings = briefing['collection_stats'].get('timings')
         labels = {'feed_entries': '读取条目', 'off_topic': '主题不符', 'source_failures': '来源失败',
                   'invalid_metadata': '时间或链接无效', 'outside_window': '报道时间超窗', 'duplicates': '重复条目',
                   'eligible_candidates': '候选总数', 'article_requests': '正文请求', 'fetch_failures': '正文请求失败',
@@ -61,7 +62,9 @@ def export_text(briefing, output):
                   'translation_cache_hits': '翻译缓存命中', 'translation_failures': '翻译失败', 'article_request_budget': '正文请求上限',
                   'skipped_recently_broadcast': '近期已播跳过',
                   'source_cap_skipped': '来源优先上限暂缓', 'unexamined_candidates': '未检查候选', 'budget_exhausted': '预算耗尽'}
-        md += ['## 筛选统计', '', *[f'- {labels.get(k, k)}：{v}' for k, v in briefing['collection_stats'].items()], '']
+        md += ['## 筛选统计', '', *[f'- {labels.get(k, k)}：{v}' for k, v in briefing['collection_stats'].items() if k != 'timings'], '']
+        if timings:
+            md += ['## 采集耗时', '', *[f'- {key}：{value} 秒' for key, value in timings.items()], '']
     if briefing.get('excluded_stories'):
         md += ['## 导入稿件筛选', '', *[f'- {x["title"]}：{x["reason"]}' for x in briefing['excluded_stories']], '']
     (output / 'report.md').write_text('\n'.join(md), encoding='utf-8')

@@ -11,6 +11,7 @@
   "topic_scope": "foundation_models",
   "require_concrete_news": true,
   "article_request_budget": 100,
+  "collection_concurrency": 6,
   "sources": [
     {
       "name": "IT之家",
