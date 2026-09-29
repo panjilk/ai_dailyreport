@@ -1,8 +1,13 @@
 """Structured research/release sources and source-only English extracts."""
+import hashlib
 import json
 import re
 import os
-from datetime import datetime
+import tempfile
+import time
+import warnings
+from pathlib import Path
+from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from html import unescape
 
@@ -12,10 +17,13 @@ import requests
 from .models import MODEL_NAMES
 
 
-TRANSLATION_URL = 'https://api.mymemory.translated.net/get'
+TRANSLATION_URL = 'https://api.deepseek.com/v1/chat/completions'
+TRANSLATION_MODEL = 'deepseek-chat'
+CACHE_PATH = Path(__file__).resolve().parent.parent / 'data' / 'translation_cache.json'
+GLOSSARY_PATH = Path(__file__).resolve().parent.parent / 'data' / 'glossary.json'
 
 
-def _translation_chunks(text, limit=450):
+def _translation_chunks(text, limit=1200):
     words = str(text or '').split()
     chunks, current = [], ''
     for word in words:
@@ -33,28 +41,143 @@ def _translation_chunks(text, limit=450):
     return chunks
 
 
-def translate_to_chinese(text, request_get=requests.get):
-    """Translate complete English display copy; fail instead of exposing English fallback."""
+def _load_translation_cache():
+    try:
+        cache = json.loads(CACHE_PATH.read_text(encoding='utf-8'))
+        if not isinstance(cache, dict) or any(
+                not isinstance(key, str) or not isinstance(entry, dict)
+                or not all(isinstance(entry.get(field), str) and entry[field]
+                           for field in ('zh', 'model', 'ts'))
+                for key, entry in cache.items()):
+            raise ValueError('缓存结构或字段无效')
+        return cache
+    except (OSError, ValueError, TypeError) as exc:
+        warnings.warn(f'翻译缓存不可用，按空缓存处理：{exc}', RuntimeWarning, stacklevel=2)
+        return {}
+
+
+def _save_translation_cache(cache):
+    # 同目录临时文件与原子替换，避免中途写入留下损坏的 JSON。
+    CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    while len(cache) > 5000:
+        oldest = min(cache, key=lambda key: cache[key]['ts'])
+        del cache[oldest]
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8', dir=CACHE_PATH.parent,
+                                         prefix='.translation_cache.', suffix='.tmp',
+                                         delete=False) as handle:
+            temporary = Path(handle.name)
+            json.dump(cache, handle, ensure_ascii=False, indent=2)
+        temporary.replace(CACHE_PATH)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def _glossary_terms():
+    try:
+        data = json.loads(GLOSSARY_PATH.read_text(encoding='utf-8'))
+        terms = data['keep_original']
+        if not isinstance(terms, list) or not all(isinstance(term, str) for term in terms):
+            raise ValueError('术语表格式无效')
+        return terms
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        warnings.warn(f'术语表不可用：{exc}', RuntimeWarning, stacklevel=2)
+        return []
+
+
+def translate_to_chinese(text, request_post=None, *, on_event=None):
+    """翻译英文展示文本；缓存命中免请求，失败时明确报错。"""
     value = re.sub(r'\s+', ' ', str(text or '')).strip()
     if not value or not re.search(r'[A-Za-z]', value):
         return value
+    digest = hashlib.sha256(value.encode('utf-8')).hexdigest()
+    cache = _load_translation_cache()
+    if digest in cache:
+        if on_event:
+            on_event('cache_hit', '')
+        return cache[digest]['zh']
+    api_key = os.environ.get('DEEPSEEK_API_KEY')
+    if not api_key:
+        raise ValueError('缺少 DEEPSEEK_API_KEY，无法翻译英文条目')
+    terms = _glossary_terms()
+    direct = proxy = None
+    if request_post is None:
+        direct = requests.Session()
+        direct.trust_env = False
+        proxy = requests.Session()
+        request_post = direct.post
+    headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
+    system = ('你是科技新闻英译中译者。只输出译文，不要解释，不要加引号。'
+              '术语表里的名称保留原文；保持数字、百分比、版本号和产品名不变；'
+              '不得添加原文没有的信息。术语表：' + json.dumps(terms, ensure_ascii=False))
     translated = []
-    for chunk in _translation_chunks(value):
-        params = {'q': chunk, 'langpair': 'en|zh-CN'}
-        email = os.environ.get('MYMEMORY_EMAIL')
-        if email:
-            params['de'] = email
-        response = request_get(TRANSLATION_URL, params=params, timeout=20,
-                               headers={'User-Agent': 'AI-Daily-Report/1.0'})
-        response.raise_for_status()
-        payload = response.json()
-        if payload.get('quotaFinished') or payload.get('responseStatus') not in (None, 200):
-            raise ValueError('英文转中文服务额度不足或返回失败')
-        result = unescape(str(payload.get('responseData', {}).get('translatedText', '')).strip())
-        if not result or result.casefold() == chunk.casefold() or not re.search(r'[\u4e00-\u9fff]', result):
-            raise ValueError('英文转中文服务未返回有效中文')
-        translated.append(result)
-    return ''.join(translated)
+    try:
+        for chunk in _translation_chunks(value):
+            required = [term for term in terms if term in chunk]
+            result = ''
+            missing = []
+            for glossary_attempt in range(2):
+                prompt = system
+                if glossary_attempt:
+                    prompt += ' 特别注意：以下名称必须在译文中逐字原样出现：' + '、'.join(missing)
+                body = {'model': TRANSLATION_MODEL,
+                        'messages': [{'role': 'system', 'content': prompt},
+                                     {'role': 'user', 'content': chunk}],
+                        'temperature': 0}
+                # 初次请求加三次退避重试。直连网络失败时额外尝试一次环境代理。
+                for attempt in range(4):
+                    try:
+                        if on_event:
+                            on_event('api_call', '')
+                        response = request_post(TRANSLATION_URL, headers=headers,
+                                                json=body, timeout=30)
+                        response.raise_for_status()
+                        result = str(response.json()['choices'][0]['message']['content']).strip()
+                        break
+                    except (requests.Timeout, requests.ConnectionError) as exc:
+                        if direct is not None and proxy is not None:
+                            try:
+                                if on_event:
+                                    on_event('api_call', '')
+                                response = proxy.post(TRANSLATION_URL, headers=headers,
+                                                      json=body, timeout=30)
+                                response.raise_for_status()
+                                result = str(response.json()['choices'][0]['message']['content']).strip()
+                                break
+                            except (requests.RequestException, ValueError, KeyError, IndexError) as fallback_exc:
+                                exc = fallback_exc
+                        if attempt == 3:
+                            raise ValueError(f'DeepSeek 翻译请求失败：{exc}') from exc
+                    except requests.HTTPError as exc:
+                        status = exc.response.status_code if exc.response is not None else None
+                        if status != 429 and not (status is not None and 500 <= status < 600) or attempt == 3:
+                            raise ValueError(f'DeepSeek 翻译请求失败：{exc}') from exc
+                    except (requests.RequestException, ValueError, KeyError, IndexError) as exc:
+                        raise ValueError(f'DeepSeek 翻译响应无效：{exc}') from exc
+                    time.sleep((1, 3, 7)[attempt])
+                if not result or result.casefold() == chunk.casefold() or not re.search(r'[\u4e00-\u9fff]', result):
+                    raise ValueError('DeepSeek 未返回有效中文译文')
+                missing = [term for term in required if term not in result]
+                if not missing:
+                    break
+            if missing and on_event:
+                on_event('warning', '翻译术语未保留原文：' + '、'.join(missing))
+            translated.append(result)
+        output = ''.join(translated)
+        cache[digest] = {'zh': output, 'model': TRANSLATION_MODEL,
+                         'ts': datetime.now(timezone.utc).isoformat()}
+        try:
+            _save_translation_cache(cache)
+        except OSError as exc:
+            warnings.warn(f'翻译缓存写入失败：{exc}', RuntimeWarning, stacklevel=2)
+        return output
+    finally:
+        if direct is not None:
+            direct.close()
+            proxy.close()
+
 
 
 def english_topic(title, abstract):

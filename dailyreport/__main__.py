@@ -57,7 +57,8 @@ def export_text(briefing, output):
                   'eligible_candidates': '候选总数', 'article_requests': '正文请求', 'fetch_failures': '正文请求失败',
                   'date_rejected': '事件日期不合格', 'content_rejected': '正文不合格', 'summary_rejected': '摘要不合格',
                   'summary_parked': '摘要门停放', 'summary_parked_overflow': '停放名额溢出',
-                  'selected': '最终收录', 'article_request_budget': '正文请求上限',
+                  'selected': '最终收录', 'translation_api_calls': '翻译接口调用',
+                  'translation_cache_hits': '翻译缓存命中', 'translation_failures': '翻译失败', 'article_request_budget': '正文请求上限',
                   'skipped_recently_broadcast': '近期已播跳过',
                   'source_cap_skipped': '来源优先上限暂缓', 'unexamined_candidates': '未检查候选', 'budget_exhausted': '预算耗尽'}
         md += ['## 筛选统计', '', *[f'- {labels.get(k, k)}：{v}' for k, v in briefing['collection_stats'].items()], '']

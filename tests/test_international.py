@@ -14,7 +14,7 @@ NOW = datetime(2026, 9, 14, 20, tzinfo=SHANGHAI)
 ABSTRACT = 'We introduce a language model for reasoning. Results improve accuracy on a public benchmark. However, evaluation is limited to English tasks.'
 
 
-def chinese_translation(_text):
+def chinese_translation(_text, **_kwargs):
     return '中文机器翻译内容。'
 
 
@@ -204,18 +204,25 @@ def test_english_rss_filters_non_ai_posts_and_needs_no_article_request(fetch, _t
     assert result['collection_stats']['off_topic'] == 1
 
 
-def test_translation_service_returns_chinese_and_rejects_english_fallback():
+def test_translation_service_returns_chinese_and_rejects_english_fallback(monkeypatch, tmp_path):
+    from dailyreport import international
+    monkeypatch.setattr(international, 'CACHE_PATH', tmp_path / 'cache.json')
+    monkeypatch.setenv('DEEPSEEK_API_KEY', 'test-key')
+
     class Response:
         def __init__(self, translated):
             self.translated = translated
+
         def raise_for_status(self):
             return None
+
         def json(self):
-            return {'responseData': {'translatedText': self.translated}, 'responseStatus': 200}
+            return {'choices': [{'message': {'content': self.translated}}]}
 
     def success(_url, **_kwargs):
         return Response('人工智能安全讨论仍需要完整证据。')
 
     assert translate_to_chinese('AI safety still needs evidence.', success) == '人工智能安全讨论仍需要完整证据。'
     with pytest.raises(ValueError, match='有效中文'):
-        translate_to_chinese('AI safety still needs evidence.', lambda *_args, **_kwargs: Response('AI safety still needs evidence.'))
+        translate_to_chinese('AI safety still needs evidence again.',
+                             lambda *_args, **_kwargs: Response('AI safety still needs evidence again.'))

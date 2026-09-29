@@ -469,6 +469,7 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
                  article_requests=0, fetch_failures=0, date_rejected=0,
                  content_rejected=0, summary_rejected=0, summary_parked=0,
                  summary_parked_overflow=0, selected=0,
+                 translation_api_calls=0, translation_cache_hits=0, translation_failures=0,
                  source_cap_skipped=0, article_request_budget=budget,
                  skipped_recently_broadcast=0)
     source_caps = {}
@@ -572,6 +573,21 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
         return row.get('content_kind') == 'paper' or (
             not row.get('content_kind') and not row.get('feed_content'))
 
+    def translation_event(kind, detail):
+        if kind == 'api_call':
+            stats['translation_api_calls'] += 1
+        elif kind == 'cache_hit':
+            stats['translation_cache_hits'] += 1
+        elif kind == 'warning':
+            errors.append('翻译警告：' + detail)
+
+    def translate_copy(value):
+        try:
+            return translate_to_chinese(value, on_event=translation_event)
+        except (requests.RequestException, OSError, ValueError):
+            stats['translation_failures'] += 1
+            raise
+
     def process_candidate(index, row):
         """Try one candidate exactly once and retain its global ranking index."""
         if index in attempted:
@@ -609,8 +625,8 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
                     source_bullets.extend(row['feature_points'][:2])
                 else:
                     source_bullets = english_summary(original, kind)
-                display_title = translate_to_chinese(row['title'])
-                bullets = [translate_to_chinese(bullet) if re.search(r'[A-Za-z]', bullet) else bullet
+                display_title = translate_copy(row['title'])
+                bullets = [translate_copy(bullet) if re.search(r'[A-Za-z]', bullet) else bullet
                            for bullet in source_bullets]
                 # Reject an oversized extract before it can fail the whole video.
                 if config.get('require_concrete_news') and not concrete_news(display_title, bullets):

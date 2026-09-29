@@ -6,3 +6,4 @@ __pycache__/
 data/broadcast_log.json
 data/source_health.json
 .pytest_tmp/
+data/translation_cache.json
