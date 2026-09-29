@@ -51,7 +51,8 @@
       "type": "rss",
       "ai_only": true,
       "max_stories": 2,
-      "enabled": true
+      "enabled": false,
+      "disabled_reason": "原订阅地址返回损坏的 XML，且并非小米官方订阅源"
     },
     {
       "name": "Hugging Face Papers",
@@ -110,7 +111,8 @@
       "content_kind": "official_article",
       "ai_only": true,
       "max_stories": 2,
-      "enabled": true
+      "enabled": false,
+      "disabled_reason": "官方新闻 RSS 返回 HTTP 404；未找到可用的官方订阅地址"
     },
     {
       "name": "Meta AI",

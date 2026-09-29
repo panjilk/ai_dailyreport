@@ -1,0 +1,30 @@
+[
+  {
+    "date": "2026-09-10",
+    "nav_label": "模型",
+    "title": "旧闻",
+    "source_url": "https://e.test/2026-09-10",
+    "fingerprint": "07691e12d43152b8"
+  },
+  {
+    "date": "2026-09-11",
+    "nav_label": "模型",
+    "title": "第一条",
+    "source_url": "https://e.test/2026-09-11",
+    "fingerprint": "51c2745060cdf433"
+  },
+  {
+    "date": "2026-09-12",
+    "nav_label": "模型",
+    "title": "第二条",
+    "source_url": "https://e.test/2026-09-12",
+    "fingerprint": "cbbf5857fdffbedd"
+  },
+  {
+    "date": "2026-09-13",
+    "nav_label": "模型",
+    "title": "第三条",
+    "source_url": "https://e.test/2026-09-13",
+    "fingerprint": "9a64d4ddbc3730c0"
+  }
+]

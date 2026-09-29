@@ -13,6 +13,8 @@ from .international import (english_blog_candidate, english_summary, english_top
                             paper_details, source_rows, translate_to_chinese)
 from .models import MODEL_NAMES, model_labels
 from .topics import ai_related, editorial_candidate, playback_priority, concrete_news
+from .broadcast_log import recent_entries, url_fingerprint
+from .source_health import load_health, record_result, save_health
 
 from bs4 import BeautifulSoup
 import feedparser
@@ -452,7 +454,7 @@ def _summary(paragraphs, title):
     return bullets, spoken_title + ''.join(bullets)
 
 
-def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
+def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, health_path=None) -> dict:
     """Fetch enabled sources; fail explicitly if no eligible extract survives."""
     _validate(now, hours, limit)
     event_cutoff_date = max(now - timedelta(hours=hours), window_start(now)).astimezone(SHANGHAI).date()
@@ -466,7 +468,8 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
     stats = dict(feed_entries=0, off_topic=0, source_failures=0,
                  article_requests=0, fetch_failures=0, date_rejected=0,
                  content_rejected=0, summary_rejected=0, selected=0,
-                 source_cap_skipped=0, article_request_budget=budget)
+                 source_cap_skipped=0, article_request_budget=budget,
+                 skipped_recently_broadcast=0)
     source_caps = {}
     for source in config.get('sources', []):
         cap = source.get('max_stories')
@@ -475,6 +478,9 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                 raise ValueError('来源 max_stories 必须为1至12的整数')
             source_caps[source.get('name', 'RSS')] = cap
     rows, errors = [], []
+    health, health_warnings = load_health(health_path) if health_path else ({}, [])
+    errors.extend(health_warnings)
+    stale_sources = []
     for source in config.get('sources', []):
         if not source.get('enabled', True):
             continue
@@ -493,6 +499,8 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                         stats['off_topic'] += 1
                         continue
                     rows.append(dict(row, source_name=name))
+                if health_path:
+                    record_result(health, name, checked=now.isoformat())
                 continue
             root = ET.fromstring(content)
             if root.tag.rsplit('}', 1)[-1].lower() not in ('rss', 'feed', 'rdf'):
@@ -521,15 +529,39 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                     if embedded:
                         row['feed_content'] = embedded
                 rows.append(row)
+            if health_path:
+                record_result(health, name, checked=now.isoformat())
         except (requests.RequestException, OSError, ValueError, ET.ParseError) as exc:
             stats['source_failures'] += 1
             errors.append(f'{name} ({url}): {exc}')
+            if health_path and record_result(health, name, exc, now.isoformat()):
+                warning = f'[源疑似失效] {name}：连续失败 {health[name]["consecutive_failures"]} 次：{exc}'
+                print(warning, flush=True)
+                stale_sources.append(dict(name=name, url=url, **health[name]))
+    if health_path:
+        save_health(health_path, health)
     # Scan the complete eligible pool; an exhausted article budget only blocks
     # candidates that actually require another request.
     candidates = select_recent(rows, now, hours, max(1, len(rows)), stats)
     if scope == 'all_ai':
         candidates.sort(key=playback_priority)  # Stable: newest first within each priority.
     stats['eligible_candidates'] = len(candidates)
+    recently_broadcast = []
+    if log_path:
+        entries, warnings = recent_entries(log_path)
+        errors.extend(warnings)
+        by_fingerprint = {entry['fingerprint']: entry for entry in entries}
+        by_url = {entry['source_url']: entry for entry in entries}
+        fresh = []
+        for row in candidates:
+            match = by_fingerprint.get(url_fingerprint(row['source_url'], row['title'])) or by_url.get(row['source_url'])
+            if match:
+                stats['skipped_recently_broadcast'] += 1
+                recently_broadcast.append(dict(title=row['title'], source_url=row['source_url'],
+                                               appeared_date=match['date']))
+            else:
+                fresh.append(row)
+        candidates = fresh
     selected_stories = []
     source_selected = {}
     considered, attempted, budget_blocked = set(), set(), set()
@@ -671,4 +703,5 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
     return dict(date=date, window_days=RECENCY_DAYS,
                 title=f'AI 日报 · {date}',
                 edition_note=f'仅北京时间最近{RECENCY_DAYS}天；热点消息优先，同一热点等级按发布时间从新到旧；不以窗口外旧闻补足条数；中英文原文机器抽取的完整要点摘要，未经人工核验；英文保留原文；论文结果为作者报告；保留来源提供的时区日期。',
-                stories=stories, collection_errors=errors, collection_stats=stats)
+                stories=stories, collection_errors=errors, collection_stats=stats,
+                recently_broadcast=recently_broadcast, stale_sources=stale_sources)

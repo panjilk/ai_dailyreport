@@ -10,6 +10,7 @@ from pathlib import Path
 import sys
 
 from .collect import collect
+from .broadcast_log import append_edition
 from .recency import enforce_recency
 from .render import CATEGORIES, prepare_briefing, render, validate_briefing, window_label
 
@@ -52,6 +53,7 @@ def export_text(briefing, output):
                   'eligible_candidates': '候选总数', 'article_requests': '正文请求', 'fetch_failures': '正文请求失败',
                   'date_rejected': '事件日期不合格', 'content_rejected': '正文不合格', 'summary_rejected': '摘要不合格',
                   'selected': '最终收录', 'article_request_budget': '正文请求上限',
+                  'skipped_recently_broadcast': '近期已播跳过',
                   'source_cap_skipped': '来源优先上限暂缓', 'unexamined_candidates': '未检查候选', 'budget_exhausted': '预算耗尽'}
         md += ['## 筛选统计', '', *[f'- {labels.get(k, k)}：{v}' for k, v in briefing['collection_stats'].items()], '']
     if briefing.get('excluded_stories'):
@@ -130,7 +132,9 @@ def main(argv=None):
             briefing = json.loads(args.input.read_text(encoding='utf-8-sig'))
         else:
             print(f'正在采集最近 {args.hours} 小时的 AI 新闻……', flush=True)
-            briefing = collect(config, now, args.hours, args.limit)
+            briefing = collect(config, now, args.hours, args.limit,
+                               log_path=ROOT / 'data' / 'broadcast_log.json',
+                               health_path=ROOT / 'data' / 'source_health.json')
         briefing.setdefault('edition_start_date', config.get('edition_start_date', briefing['date']))
         briefing = prepare_briefing(briefing)
         validate_briefing(briefing)
@@ -152,6 +156,9 @@ def main(argv=None):
                    transition_click_volume=config.get('transition_click_volume', 0.32),
                    search_time=now)
         write_preview(briefing, output)
+        if not args.collect_only and (output / 'daily.mp4').is_file():
+            for warning in append_edition(briefing, ROOT / 'data' / 'broadcast_log.json'):
+                print(f'已播台账：{warning}', flush=True)
         print(f'完成：{output / "index.html"}', flush=True)
         if args.open and os.name == 'nt':
             os.startfile(output / 'index.html')
