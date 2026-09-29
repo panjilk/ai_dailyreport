@@ -45,6 +45,10 @@ def export_text(briefing, output):
             md += ['日期证据（原文）：' + story['event_date_evidence'], '']
         for source in story.get('supporting_sources', []):
             md += [f"补充证据：[{source['name']}]({source['url']})", '']
+    if briefing.get('summary_parked'):
+        md += ['## 摘要门停放候选', '', *[
+            f"- {item['event_date']}｜{item['source_name']}｜{item['title']}｜{item['reason']}｜{item['source_url']}"
+            for item in briefing['summary_parked'][:30]], '']
     if briefing.get('collection_errors'):
         md += ['## 采集记录', '', *['- ' + x for x in briefing['collection_errors']], '']
     if briefing.get('collection_stats'):
@@ -52,6 +56,7 @@ def export_text(briefing, output):
                   'invalid_metadata': '时间或链接无效', 'outside_window': '报道时间超窗', 'duplicates': '重复条目',
                   'eligible_candidates': '候选总数', 'article_requests': '正文请求', 'fetch_failures': '正文请求失败',
                   'date_rejected': '事件日期不合格', 'content_rejected': '正文不合格', 'summary_rejected': '摘要不合格',
+                  'summary_parked': '摘要门停放', 'summary_parked_overflow': '停放名额溢出',
                   'selected': '最终收录', 'article_request_budget': '正文请求上限',
                   'skipped_recently_broadcast': '近期已播跳过',
                   'source_cap_skipped': '来源优先上限暂缓', 'unexamined_candidates': '未检查候选', 'budget_exhausted': '预算耗尽'}
@@ -135,6 +140,7 @@ def main(argv=None):
             briefing = collect(config, now, args.hours, args.limit,
                                log_path=ROOT / 'data' / 'broadcast_log.json',
                                health_path=ROOT / 'data' / 'source_health.json')
+        briefing.setdefault('summary_parked', [])
         briefing.setdefault('edition_start_date', config.get('edition_start_date', briefing['date']))
         briefing = prepare_briefing(briefing)
         validate_briefing(briefing)

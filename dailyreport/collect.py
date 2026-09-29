@@ -467,7 +467,8 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
         raise ValueError('article_request_budget 必须为1至100的整数')
     stats = dict(feed_entries=0, off_topic=0, source_failures=0,
                  article_requests=0, fetch_failures=0, date_rejected=0,
-                 content_rejected=0, summary_rejected=0, selected=0,
+                 content_rejected=0, summary_rejected=0, summary_parked=0,
+                 summary_parked_overflow=0, selected=0,
                  source_cap_skipped=0, article_request_budget=budget,
                  skipped_recently_broadcast=0)
     source_caps = {}
@@ -564,6 +565,7 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
         candidates = fresh
     selected_stories = []
     source_selected = {}
+    parked_candidates = {}
     considered, attempted, budget_blocked = set(), set(), set()
 
     def needs_article_request(row):
@@ -578,6 +580,9 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
         considered.add(index)
         source_name = row['source_name']
         stage = 'content_rejected'
+        original = ''
+        paragraphs = []
+        event = {}
         try:
             if row.get('content_kind'):
                 kind = row['content_kind']
@@ -664,6 +669,17 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
         except (requests.RequestException, OSError, ValueError) as exc:
             stats[stage] += 1
             errors.append(f"{row['source_name']} ({row['source_url']}): {exc}")
+            if stage == 'summary_rejected':
+                fingerprint = url_fingerprint(row['source_url'], row['title'])
+                if fingerprint not in parked_candidates:
+                    source_text = original if row.get('content_kind') else '\n'.join(paragraphs)
+                    parked_candidates[fingerprint] = dict(
+                        title=row['title'], source_name=source_name,
+                        source_url=row['source_url'], published=row.get('published') or '',
+                        event_date=event.get('event_date') or '',
+                        event_date_evidence=event.get('event_date_evidence') or '',
+                        reason=str(exc),
+                        snippet=re.sub(r'\s+', ' ', str(source_text or '')).strip()[:200])
 
     deferred = []
     for index, row in enumerate(candidates):
@@ -694,6 +710,27 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
             process_candidate(index, row)
 
     stories = [story for _, story in sorted(selected_stories, key=lambda pair: pair[0])]
+    summary_parked = []
+    parked_per_source = {}
+
+    def parked_time(item):
+        value = item['event_date'] or item['published']
+        moment = _date(value)
+        if moment is None:
+            try:
+                moment = datetime.fromisoformat(value).replace(tzinfo=SHANGHAI)
+            except (TypeError, ValueError):
+                return datetime.min.replace(tzinfo=timezone.utc)
+        return moment.astimezone(timezone.utc)
+
+    for parked in sorted(parked_candidates.values(), key=parked_time, reverse=True):
+        name = parked['source_name']
+        if len(summary_parked) >= 30 or parked_per_source.get(name, 0) >= 3:
+            stats['summary_parked_overflow'] += 1
+            continue
+        summary_parked.append(parked)
+        parked_per_source[name] = parked_per_source.get(name, 0) + 1
+    stats['summary_parked'] = len(summary_parked)
     stats['selected'] = len(stories)
     stats['unexamined_candidates'] = len(candidates) - len(considered)
     stats['budget_exhausted'] = bool(budget_blocked) and len(stories) < limit
@@ -703,5 +740,6 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
     return dict(date=date, window_days=RECENCY_DAYS,
                 title=f'AI 日报 · {date}',
                 edition_note=f'仅北京时间最近{RECENCY_DAYS}天；热点消息优先，同一热点等级按发布时间从新到旧；不以窗口外旧闻补足条数；中英文原文机器抽取的完整要点摘要，未经人工核验；英文保留原文；论文结果为作者报告；保留来源提供的时区日期。',
-                stories=stories, collection_errors=errors, collection_stats=stats,
+                stories=stories, summary_parked=summary_parked,
+                collection_errors=errors, collection_stats=stats,
                 recently_broadcast=recently_broadcast, stale_sources=stale_sources)

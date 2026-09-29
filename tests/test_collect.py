@@ -362,7 +362,7 @@ class CollectionTests(unittest.TestCase):
         fetch.side_effect = response
         config = {'topic_scope': 'all_ai', 'sources': [{'name': '坏源', 'url': 'https://example.com/bad', 'enabled': True, 'ai_only': False}, {'name': '新闻', 'url': 'https://example.com/rss', 'enabled': True, 'ai_only': False}]}
         result = collect(config, NOW, 24, 8)
-        self.assertEqual(set(result), {'date', 'window_days', 'title', 'edition_note', 'stories', 'collection_errors', 'collection_stats', 'recently_broadcast', 'stale_sources'})
+        self.assertEqual(set(result), {'date', 'window_days', 'title', 'edition_note', 'stories', 'summary_parked', 'collection_errors', 'collection_stats', 'recently_broadcast', 'stale_sources'})
         self.assertEqual(result['date'], '2026-09-11')
         story = result['stories'][0]
         self.assertEqual(set(story), {'id', 'category', 'title', 'bullets', 'narration', 'source_name', 'source_url', 'published', 'evidence', 'verification', 'source_text', 'nav_label', 'event_date', 'event_date_evidence'})
