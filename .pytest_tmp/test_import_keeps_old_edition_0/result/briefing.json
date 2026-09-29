@@ -1,0 +1,31 @@
+{
+  "date": "2026-09-11",
+  "window_days": 5,
+  "edition_note": "来源已保存",
+  "stories": [
+    {
+      "title": "当前模型",
+      "category": "要闻",
+      "bullets": [
+        "第一点"
+      ],
+      "narration": "当前模型。第一点",
+      "source_name": "Example",
+      "source_url": "https://example.com/news?a=1&b=2",
+      "published": "2026-09-12",
+      "event_date": "2026-09-12"
+    }
+  ],
+  "search_date": "2026-09-13",
+  "edition_start_date": "2026-09-21",
+  "excluded_stories": [
+    {
+      "title": "<script>alert(1)</script>",
+      "reason": "仅允许搜查最近120小时且不早于北京时间最近5天首日零点的新闻"
+    }
+  ],
+  "window_hours": 120,
+  "window_start": "2026-09-09T00:00:00+08:00",
+  "window_end": "2026-09-13T12:00:00+08:00",
+  "recency_policy": "bounded_hours"
+}

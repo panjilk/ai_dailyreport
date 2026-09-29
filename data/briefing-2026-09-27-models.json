@@ -1,0 +1,148 @@
+{
+  "date": "2026-09-27",
+  "title": "AI 日报 · 2026-09-27",
+  "edition_start_date": "2026-09-21",
+  "edition_note": "本期精选9月23日至26日七条可核对的大模型及相关产品更新。按事件实际日期标注，不把前几日发布的消息称作今天首发。",
+  "stories": [
+    {
+      "title": "智谱发布 GLM-5.3-Flash 多模态模型",
+      "nav_label": "GLM-5.3-Flash",
+      "category": "模型发布",
+      "published": "2026-09-26",
+      "event_date": "2026-09-26",
+      "event_date_evidence": "AutoClaw 官方技术文章标注 Published: September 26, 2026。",
+      "source_name": "AutoClaw",
+      "source_url": "https://autoclaw.z.ai/blog/model/glm-5.3-flash/",
+      "bullets": [
+        "智谱发布 GLM-5.3-Flash，这是 GLM-5 系列首个原生多模态模型，支持文字、图像、视频和文件理解。",
+        "模型总参数为3200亿，每次推理激活180亿参数；采用稀疏注意力与线性注意力结合的架构，面向长上下文和智能体任务。",
+        "官方已开放 MIT 许可的模型权重，并表示可通过 SGLang、vLLM 等框架部署；基准成绩为厂商自行披露。"
+      ],
+      "video_bullets": [
+        "智谱发布 GLM 五点三 Flash，能同时理解文字、图片和视频。它以较少的激活参数降低推理开销，模型权重也已开放下载。"
+      ],
+      "verification": "official_model_announcement",
+      "source_text": "AutoClaw official model article, September 26, 2026."
+    },
+    {
+      "title": "美团发布 LongCat-2.5-Preview 模型",
+      "nav_label": "LongCat-2.5",
+      "category": "模型发布",
+      "published": "2026-09-25",
+      "event_date": "2026-09-25",
+      "event_date_evidence": "LongCat API 官方更新日志标注 Version: 2026-09-25。",
+      "source_name": "LongCat API",
+      "source_url": "https://longcat.chat/platform/docs/ChangeLog.html#longcat-2-5-preview-now-available",
+      "bullets": [
+        "美团 LongCat API 平台9月25日上线 LongCat-2.5-Preview 预览模型。",
+        "这次增加图像理解能力，可进行跨模态问答、内容总结和视觉推理；官方同时强调代码生成与理解能力。",
+        "该模型已可通过 LongCat API 使用，并兼容 Claude Code、Hermes、OpenClaw 等开发环境。"
+      ],
+      "video_bullets": [
+        "美团上线 LongCat 二点五预览版，新增图片理解能力，支持看图问答和视觉推理。官方还强调它的编程能力，并表示可接入 Claude Code 等开发工具。"
+      ],
+      "verification": "official_model_changelog",
+      "source_text": "LongCat API Platform Change Log, Version: 2026-09-25."
+    },
+    {
+      "title": "DeepSeek Harness 候选版加入定时任务",
+      "nav_label": "DeepSeek Harness",
+      "category": "开发生态",
+      "published": "2026-09-24",
+      "event_date": "2026-09-24",
+      "event_date_evidence": "DeepSeek 官方 GitHub releases 标注 v0.1.7-rc.2 于 24 Sep 发布。",
+      "source_name": "DeepSeek",
+      "source_url": "https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.1.7-rc.2",
+      "bullets": [
+        "DeepSeek Harness 发布 0.1.7-rc.2 候选版，启用定时任务后可创建提醒、查看运行记录，并让任务在重启后继续保留。",
+        "桌面端新增首次使用引导；Web 与桌面端增加快捷键查看和自定义，关闭桌面窗口后任务可在后台继续运行。",
+        "这是智能体运行工具的预发布版本，不是 DeepSeek 基础模型升级；定时任务默认需要用户主动启用。"
+      ],
+      "video_bullets": [
+        "DeepSeek 的智能体工具 Harness 更新候选版，新增可持续保存的定时任务。关闭桌面窗口后，正在执行的任务也能留在后台运行。"
+      ],
+      "verification": "official_github_release",
+      "source_text": "DeepSeek Harness GitHub release v0.1.7-rc.2, September 24, 2026."
+    },
+    {
+      "title": "OpenAI 为 ChatGPT 语音对话接入插件",
+      "nav_label": "ChatGPT语音",
+      "category": "产品应用",
+      "published": "2026-09-23",
+      "event_date": "2026-09-23",
+      "event_date_evidence": "OpenAI 官方 ChatGPT 更新日志标注 September 23, 2026。",
+      "source_name": "OpenAI",
+      "source_url": "https://help.openai.com/en/articles/6825453-chatgpt-release-notes",
+      "bullets": [
+        "ChatGPT 的 Live 语音对话现在支持使用账号已有的插件和已连接应用，可边说边调用工具，并在聊天中查看文字回答。",
+        "这项能力覆盖网页、iOS 和 Android；Work 里的语音还可创建文档、演示文稿和电子表格，未完成的任务能转到文字对话继续。",
+        "具体可用插件取决于账号套餐、已有授权及使用额度；这是一项产品功能更新，不是新模型发布。"
+      ],
+      "video_bullets": [
+        "ChatGPT 的实时语音对话开始支持插件。用户可以直接开口调用已连接的工具；在 Work 中，还能通过语音创建文档或表格。"
+      ],
+      "verification": "official_release_notes",
+      "source_text": "OpenAI ChatGPT release notes, September 23, 2026."
+    },
+    {
+      "title": "Claude 开放插件目录提交入口",
+      "nav_label": "Claude插件",
+      "category": "开发生态",
+      "published": "2026-09-25",
+      "event_date": "2026-09-25",
+      "event_date_evidence": "Claude 官方博客标注 September 25, 2026。",
+      "source_name": "Claude",
+      "source_url": "https://claude.com/blog/build-plugins-for-claude",
+      "bullets": [
+        "Claude 向付费计划开发者开放插件目录提交门户，可提交单独的 MCP 连接器，或把 MCP 服务与技能组合成插件。",
+        "开发者可在门户里进行自动校验、跟踪审核进度；获批发布后，还能查看安装量和目录搜索等使用数据。",
+        "Claude 表示未来数周将逐步统一 Claude 与 Claude Code 的插件发现体验，现有连接器与技能无需立即迁移。"
+      ],
+      "video_bullets": [
+        "Claude 开放插件提交入口。开发者可以把外部工具和技能打包上架，查看审核进度；插件发布后，还能了解安装和搜索数据。"
+      ],
+      "verification": "official_product_announcement",
+      "source_text": "Claude official blog, September 25, 2026."
+    },
+    {
+      "title": "Google 推出 Gemini 3.8 Live 虚拟形象",
+      "nav_label": "Gemini形象",
+      "category": "产品应用",
+      "published": "2026-09-24",
+      "event_date": "2026-09-24",
+      "event_date_evidence": "Google 官方博客标注 Sep 24, 2026。",
+      "source_name": "Google",
+      "source_url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-8-live-with-live-avatar/",
+      "bullets": [
+        "Google 为 Gemini 3.8 Live 推出 Live Avatar，把实时语音对话与低延迟视频形象结合，可同步口型和表情。",
+        "该功能支持边对话边在后台调用工具，并可在97种语言之间切换；目前已在 Gemini Enterprise 提供。",
+        "企业定制形象仍需单独获批，不能理解为所有普通 Gemini 用户都已开放；生成内容带 SynthID 水印。"
+      ],
+      "video_bullets": [
+        "Gemini 三点八 Live 新增实时虚拟形象，能边听边说，并让口型跟随语音变化。企业用户已可使用，定制专属形象仍需申请。"
+      ],
+      "verification": "official_model_feature_announcement",
+      "source_text": "Google Gemini official blog, September 24, 2026."
+    },
+    {
+      "title": "Liquid AI 开源视觉模型加速组件 DSpark",
+      "nav_label": "Liquid DSpark",
+      "category": "开发生态",
+      "published": "2026-09-24",
+      "event_date": "2026-09-24",
+      "event_date_evidence": "Liquid AI 官方技术博客标注 SEP 24, 2026。",
+      "source_name": "Liquid AI",
+      "source_url": "https://www.liquid.ai/blog/lfm2-5-vl-dspark",
+      "bullets": [
+        "Liquid AI 发布 LFM2.5-VL-3B 的实验性 DSpark 草稿模型，用推测解码加快视觉语言模型生成回答。",
+        "厂商在指定 GPU 和边缘设备测试中，报告解码吞吐最高分别提升2.66倍和3.13倍；端到端增益会受图像编码等环节限制。",
+        "草稿模型约2.8亿参数，已提供模型权重，并支持 llama.cpp、SGLang 和 MLX-VLM。"
+      ],
+      "video_bullets": [
+        "Liquid AI 推出视觉模型加速组件 DSpark。它先预测接下来要说的内容，再由原模型校验；官方测试中，部分设备的生成速度提高到约三倍。"
+      ],
+      "verification": "official_technical_announcement",
+      "source_text": "Liquid AI technical blog, September 24, 2026."
+    }
+  ]
+}

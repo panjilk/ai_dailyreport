@@ -1,0 +1,157 @@
+{
+  "date": "2026-09-23",
+  "title": "AI 日报 · 2026-09-23",
+  "edition_start_date": "2026-09-21",
+  "edition_note": "本期精选近五天内七条可核对的模型及相关产品消息；模型发布优先，能力和成本数字按厂商披露表述。",
+  "stories": [
+    {
+      "title": "OpenAI 发布 GPT-6 Sol 与 Luna",
+      "nav_label": "GPT",
+      "category": "模型发布",
+      "published": "2026-09-22",
+      "event_date": "2026-09-22",
+      "event_date_evidence": "OpenAI API 更新日志和开发者公告均标注 2026 年 9 月 22 日发布。",
+      "source_name": "OpenAI",
+      "source_url": "https://community.openai.com/t/announcing-gpt-6-sol-and-gpt-6-luna/1399925",
+      "supporting_sources": [
+        {"name": "OpenAI API 更新日志", "url": "https://developers.openai.com/api/docs/changelog"}
+      ],
+      "bullets": [
+        "OpenAI于9月22日推出GPT-6 Sol和Luna，两款模型已在API中提供，支持文本与图像输入。",
+        "官方称两款模型延续Astra的能力，但更快、成本更低；API价格相较GPT-5.6促销价降低50%。Sol面向复杂工作，Luna面向高频、成本敏感任务。",
+        "官方公告称，两款模型已向ChatGPT Work和Codex的Plus、Pro、Business、Enterprise及Edu用户开放；免费和Go用户可在桌面端使用Luna。"
+      ],
+      "video_bullets": [
+        "OpenAI发布GPT-6 Sol和Luna，定位更快、更省的工作模型。官方称API价格较GPT-5.6促销价降低一半，两款均已开放接口。"
+      ],
+      "verification": "official_announcement",
+      "source_text": "OpenAI developer announcement and API changelog, September 22, 2026."
+    },
+    {
+      "title": "Anthropic 发布 Claude Opus 5.5",
+      "nav_label": "Claude",
+      "category": "模型发布",
+      "published": "2026-09-22",
+      "event_date": "2026-09-22",
+      "event_date_evidence": "Anthropic 发布页标注 September 22, 2026。",
+      "source_name": "Anthropic",
+      "source_url": "https://www.anthropic.com/claude-opus-5-5",
+      "bullets": [
+        "Anthropic于9月22日推出Claude Opus 5.5，这是Claude 5.5系列的首款模型，已通过Claude平台及云服务提供。",
+        "厂商称它在多数工作中达到Claude Fable 5.1的水平；典型任务的运行成本比Opus 5低40%，输出速度比Opus 5快逾30%。",
+        "API标准价格为每百万输入词元4美元、输出词元20美元；这属于厂商公布的定价和评测，不代表所有任务的实际花费相同。"
+      ],
+      "video_bullets": [
+        "Anthropic发布Claude Opus 5.5。官方称它在多数工作中达到Fable 5.1的水平，典型任务运行成本较Opus 5低40%，目前已开放API。"
+      ],
+      "verification": "official_announcement",
+      "source_text": "Anthropic Claude Opus 5.5 announcement, September 22, 2026."
+    },
+    {
+      "title": "小米发布 MiMo-V2.6 Pro 与 Flash",
+      "nav_label": "小米MiMo",
+      "category": "模型发布",
+      "published": "2026-09-22",
+      "event_date": "2026-09-22",
+      "event_date_evidence": "小米MiMo官方模型发布记录标注 2026-09-22 MiMo-V2.6 系列发布。",
+      "source_name": "小米MiMo",
+      "source_url": "https://mimo.mi.com/docs/zh-CN/updates/model",
+      "supporting_sources": [
+        {"name": "IT之家发布报道", "url": "https://www.ithome.com/1/005/496.htm"}
+      ],
+      "bullets": [
+        "小米MiMo官方记录显示，MiMo-V2.6系列于9月22日发布，包含面向复杂任务的Pro、面向高频办公的Flash和Pro-UltraSpeed。",
+        "官方称UltraSpeed模式在兼顾Pro能力的同时，最高可提供20倍推理速度；这是厂商指标，并非独立实测。",
+        "IT之家报道，Pro和Flash均为原生全模态模型，小米同步开源了模型权重与技术报告，并已在开放平台上线。"
+      ],
+      "video_bullets": [
+        "小米发布MiMo-V2.6系列，包括面向复杂任务的Pro和低成本的Flash。两款模型权重已开源；官方称UltraSpeed模式最高可提速20倍。"
+      ],
+      "verification": "official_release_plus_media_report",
+      "source_text": "Xiaomi MiMo model release log, September 22, 2026; IT Home report of the same release."
+    },
+    {
+      "title": "xAI 发布 Grok 4.7",
+      "nav_label": "Grok",
+      "category": "模型发布",
+      "published": "2026-09-21",
+      "event_date": "2026-09-21",
+      "event_date_evidence": "xAI 官方发布页标注 Sep 21, 2026。",
+      "source_name": "xAI",
+      "source_url": "https://x.ai/news/grok-4-7",
+      "bullets": [
+        "xAI 于 9 月 21 日推出 Grok 4.7，主要面向编程和知识工作，较 Grok 4.6 使用更大的基础模型。",
+        "官方称模型强化了长任务中的自检和上下文处理；标准 API 起价为每百万输入词元 2 美元、输出词元 6 美元。",
+        "Grok 4.7 已在 xAI API、Grok Build 和 Cursor 提供；厂商另提供输出速度更快、价格翻倍的版本。"
+      ],
+      "video_bullets": [
+        "xAI 发布 Grok 4.7，重点升级长时间编程和知识工作。官方称它更擅长检查自己的结果；模型已在 API、Grok Build 和 Cursor 上线。"
+      ],
+      "verification": "official_announcement",
+      "source_text": "xAI Grok 4.7 announcement, September 21, 2026."
+    },
+    {
+      "title": "阶跃星辰推出 Step 5 Preview",
+      "nav_label": "Step 5",
+      "category": "模型发布",
+      "published": "2026-09-20",
+      "event_date": "2026-09-20",
+      "event_date_evidence": "阶跃星辰官方发布页介绍 Step 5 Preview；9 月 20 日的发布报道与官方当前可用说明相符。",
+      "source_name": "阶跃星辰",
+      "source_url": "https://www.stepfun.com/step-5-preview",
+      "bullets": [
+        "阶跃星辰推出 Step 5 Preview，定位复杂编程、智能体任务和专业知识工作。",
+        "官方介绍，该模型采用稀疏混合专家架构，总参数 6000 亿、每词元激活 270 亿，支持百万词元上下文和图像输入。",
+        "目前可通过阶跃星辰产品和 API 使用；官方计划 10 月 15 日开放模型权重，尚不能写成已经开源。"
+      ],
+      "video_bullets": [
+        "阶跃星辰推出 Step 5 Preview，面向编程和长任务智能体。它支持百万词元上下文和图像输入，已开放 API；模型权重计划十月中旬发布。"
+      ],
+      "verification": "official_announcement_plus_date_report",
+      "source_text": "StepFun Step 5 Preview official model page and dated launch reporting, September 20, 2026."
+    },
+    {
+      "title": "阿里开源 Qwen-Image-2.1",
+      "nav_label": "千问图像",
+      "category": "模型发布",
+      "published": "2026-09-20",
+      "event_date": "2026-09-20",
+      "event_date_evidence": "Qwen 官方博客和 GitHub 项目均标注 2026 年 9 月 20 日发布。",
+      "source_name": "Qwen",
+      "source_url": "https://qwen.ai/blog?id=qwen-image-2.1",
+      "supporting_sources": [
+        {"name": "Qwen 官方代码库", "url": "https://github.com/QwenLM/Qwen-Image-2.1"}
+      ],
+      "bullets": [
+        "千问团队于 9 月 20 日开源 Qwen-Image-2.1，将文生图与图片编辑整合在一个模型中。",
+        "官方称视觉生成部分为 70 亿参数，原生支持透明背景图片的生成与编辑。",
+        "模型支持最多 10 张参考图进行编辑；权重已通过 Hugging Face 和 ModelScope 提供。"
+      ],
+      "video_bullets": [
+        "阿里千问开源 Qwen-Image-2.1。新模型把图片生成和编辑合在一起，支持透明背景和最多十张参考图，权重已经开放下载。"
+      ],
+      "verification": "official_blog_and_repository",
+      "source_text": "Qwen official blog and GitHub release notes, September 20, 2026."
+    },
+    {
+      "title": "智谱 ZCode 更新 GLM 编程工作流",
+      "nav_label": "GLM",
+      "category": "开发生态",
+      "published": "2026-09-22",
+      "event_date": "2026-09-22",
+      "event_date_evidence": "ZCode 官方更新日志标注 v3.14.3 于 Sep 22, 2026 发布。",
+      "source_name": "Z.ai",
+      "source_url": "https://zcode.z.ai/en/changelog",
+      "bullets": [
+        "智谱的 GLM 编程工具 ZCode 于 9 月 22 日更新至 v3.14.3。",
+        "新版允许在任务运行中直接调整工作流并发上限，无须先停止任务。",
+        "更新还改进工作流重启后的复用逻辑、实时状态显示，并修复部分工作流导致界面崩溃的问题。"
+      ],
+      "video_bullets": [
+        "智谱更新 GLM 编程工具 ZCode。现在运行中的工作流也能直接调整并发数量，新版还改进了任务重启和状态显示。"
+      ],
+      "verification": "official_changelog",
+      "source_text": "ZCode official changelog, version 3.14.3, September 22, 2026."
+    }
+  ]
+}

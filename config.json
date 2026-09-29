@@ -1,0 +1,231 @@
+{
+  "voice": "zh-CN-XiaoxiaoNeural",
+  "english_voice": "zh-CN-XiaoxiaoNeural",
+  "speech_rate": 10,
+  "speech_pitch_hz": -8,
+  "speech_warmth": true,
+  "scene_lead_in_seconds": 0.25,
+  "background_music_volume": 0.42,
+  "transition_click_volume": 0.32,
+  "edition_start_date": "2026-09-21",
+  "topic_scope": "foundation_models",
+  "require_concrete_news": true,
+  "article_request_budget": 100,
+  "sources": [
+    {
+      "name": "IT之家",
+      "url": "https://www.ithome.com/rss/",
+      "ai_only": false,
+      "max_stories": 5,
+      "enabled": true
+    },
+    {
+      "name": "量子位",
+      "url": "https://www.qbitai.com/feed",
+      "type": "rss",
+      "ai_only": true,
+      "max_stories": 3,
+      "enabled": true
+    },
+    {
+      "name": "雷峰网",
+      "url": "https://www.leiphone.com/feed",
+      "type": "rss",
+      "ai_only": false,
+      "use_feed_content": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "极客公园",
+      "url": "https://www.geekpark.net/rss",
+      "type": "rss",
+      "ai_only": false,
+      "use_feed_content": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "小米AI实验室",
+      "url": "https://hyper.ai/feed",
+      "type": "rss",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "Hugging Face Papers",
+      "url": "https://huggingface.co/api/daily_papers",
+      "type": "hf_papers",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "arXiv cs.CL",
+      "url": "https://rss.arxiv.org/rss/cs.CL",
+      "type": "arxiv",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "Transformers Releases",
+      "url": "https://api.github.com/repos/huggingface/transformers/releases?per_page=20",
+      "type": "github_releases",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "OpenAI News",
+      "url": "https://openai.com/news/rss.xml",
+      "type": "english_rss",
+      "content_kind": "official_article",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "Google DeepMind",
+      "url": "https://deepmind.google/blog/rss.xml",
+      "type": "english_rss",
+      "content_kind": "official_article",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "美团 LongCat 官方更新",
+      "url": "https://longcat.chat/platform/docs/ChangeLog.html",
+      "type": "official_changelog",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "Anthropic News",
+      "url": "https://www.anthropic.com/news/rss.xml",
+      "type": "english_rss",
+      "content_kind": "official_article",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "Meta AI",
+      "url": "https://engineering.fb.com/feed/",
+      "type": "english_rss",
+      "content_kind": "official_article",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "Hugging Face Blog",
+      "url": "https://huggingface.co/blog/feed.xml",
+      "type": "english_rss",
+      "content_kind": "official_article",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "NVIDIA Blog",
+      "url": "https://blogs.nvidia.com/feed/",
+      "type": "english_rss",
+      "content_kind": "official_article",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "TechCrunch AI",
+      "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+      "type": "english_rss",
+      "ai_only": true,
+      "max_stories": 2,
+      "enabled": true
+    },
+    {
+      "name": "Simon Willison",
+      "url": "https://simonwillison.net/atom/everything/",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Gary Marcus",
+      "url": "https://garymarcus.substack.com/feed",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Dwarkesh Patel",
+      "url": "https://www.dwarkeshpatel.com/feed",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Gwern",
+      "url": "https://gwern.substack.com/feed",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Max Woolf",
+      "url": "https://minimaxir.com/index.xml",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Giles Thomas",
+      "url": "https://gilesthomas.com/feed/rss.xml",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Sean Goedecke",
+      "url": "https://www.seangoedecke.com/rss.xml",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Martin Alderson",
+      "url": "https://martinalderson.com/feed.xml",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "Where's Your Ed At",
+      "url": "https://www.wheresyoured.at/rss/",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    },
+    {
+      "name": "LCamtuf",
+      "url": "https://lcamtuf.substack.com/feed",
+      "type": "english_rss",
+      "ai_only": false,
+      "max_stories": 1,
+      "enabled": true
+    }
+  ]
+}

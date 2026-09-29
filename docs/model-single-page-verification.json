@@ -1,0 +1,21 @@
+{
+  "duration_seconds": 169.417,
+  "stories": 4,
+  "content_pages": 4,
+  "points": 12,
+  "speech_units": 18,
+  "subtitles": 42,
+  "navigation": [
+    "概览",
+    "ChatGPT",
+    "Claude",
+    "Gemini",
+    "DeepSeek",
+    "来源"
+  ],
+  "speech_rate": 20,
+  "checks": "single-page coverage, exact transcript, final word audio coverage, full video/audio decode passed",
+  "tests": 53,
+  "subtests": 14,
+  "visual_review": "passed: full-width text and model navigation visible, no overflow"
+}

@@ -1,0 +1,96 @@
+{
+  "date": "2026-09-12",
+  "window_days": 12,
+  "title": "大模型迭代与效果 · 2026-09-12",
+  "edition_note": "截至2026年9月12日核验；范围为9月1日至12日近期模型迭代与评测，非过去24小时快讯；published为来源页面日期，仅保留已核实的日期精度，不等同首次发布日；区分厂商自测与独立评测。",
+  "stories": [
+    {
+      "title": "GPT-6 Astra强化复杂任务",
+      "source_name": "OpenAI",
+      "source_url": "https://openai.com/index/gpt-6-astra-next-generation-work/",
+      "published": "2026-09-09",
+      "id": "ccf941ffb9a6917a",
+      "category": "模型发布",
+      "nav_label": "ChatGPT",
+      "bullets": [
+        "OpenAI于9月9日介绍已推出的GPT-6 Astra，重点提升软件操作、编程和多步骤工作能力，已用于ChatGPT Work、Codex及接口服务。",
+        "独立机构AA的9月9日评测显示，最高推理档的智能指数为53分，比GPT-5.6 Sol高6分，编程智能体指数由55分升至62分。",
+        "但同一独立评测中，其部分工作成果的呈现质量下降，编程任务平均成本比前代高约百分之十五，综合分数提升不代表每项任务都更好或更便宜。"
+      ],
+      "narration": "GPT-6 Astra强化复杂任务。OpenAI于9月9日介绍已推出的GPT-6 Astra，重点提升软件操作、编程和多步骤工作能力，已用于ChatGPT Work、Codex及接口服务。独立机构AA的9月9日评测显示，最高推理档的智能指数为53分，比GPT-5.6 Sol高6分，编程智能体指数由55分升至62分。但同一独立评测中，其部分工作成果的呈现质量下降，编程任务平均成本比前代高约百分之十五，综合分数提升不代表每项任务都更好或更便宜。",
+      "evidence": "OpenAI于9月9日介绍已推出的GPT-6 Astra，重点提升软件操作、编程和多步骤工作能力，已用于ChatGPT Work、Codex及接口服务。独立机构AA的9月9日评测显示，最高推理档的智能指数为53分，比GPT-5.6 Sol高6分，编程智能体指数由55分升至62分。但同一独立评测中，其部分工作成果的呈现质量下降，编程任务平均成本比前代高约百分之十五，综合分数提升不代表每项任务都更好或更便宜。",
+      "verification": "official_source_and_independent_evaluation_reviewed",
+      "supporting_sources": [
+        {
+          "name": "Artificial Analysis 独立评测",
+          "url": "https://artificialanalysis.ai/articles/benchmarking-gpt-6-astra"
+        }
+      ]
+    },
+    {
+      "title": "Claude Fable 5.1提升长任务能力",
+      "source_name": "Anthropic",
+      "source_url": "https://www.anthropic.com/claude-fable-and-mythos-5-1",
+      "published": "2026-09-01",
+      "id": "e7232d52f37fd859",
+      "category": "模型发布",
+      "nav_label": "Claude",
+      "bullets": [
+        "Anthropic于9月1日推出Claude Fable 5.1与Mythos 5.1，两者共享底层模型，升级重点是编程、知识工作和长时间解决问题的能力。",
+        "厂商自测中，Fable的终端编程基准第四版成绩从前代的百分之四十二升至百分之五十五点八，科研终端任务也有提升，这些数字属于厂商评测。",
+        "独立机构AA在9月9日测得Fable最高档带回退设置的智能指数为53分，与Astra持平，但这不等于实际任务全能，Mythos仍仅向受信任项目开放。"
+      ],
+      "narration": "Claude Fable 5.1提升长任务能力。Anthropic于9月1日推出Claude Fable 5.1与Mythos 5.1，两者共享底层模型，升级重点是编程、知识工作和长时间解决问题的能力。厂商自测中，Fable的终端编程基准第四版成绩从前代的百分之四十二升至百分之五十五点八，科研终端任务也有提升，这些数字属于厂商评测。独立机构AA在9月9日测得Fable最高档带回退设置的智能指数为53分，与Astra持平，但这不等于实际任务全能，Mythos仍仅向受信任项目开放。",
+      "evidence": "Anthropic于9月1日推出Claude Fable 5.1与Mythos 5.1，两者共享底层模型，升级重点是编程、知识工作和长时间解决问题的能力。厂商自测中，Fable的终端编程基准第四版成绩从前代的百分之四十二升至百分之五十五点八，科研终端任务也有提升，这些数字属于厂商评测。独立机构AA在9月9日测得Fable最高档带回退设置的智能指数为53分，与Astra持平，但这不等于实际任务全能，Mythos仍仅向受信任项目开放。",
+      "verification": "official_source_and_independent_evaluation_reviewed",
+      "supporting_sources": [
+        {
+          "name": "Artificial Analysis 独立评测",
+          "url": "https://artificialanalysis.ai/articles/benchmarking-gpt-6-astra"
+        }
+      ]
+    },
+    {
+      "title": "Gemini 3.8 Flash增强推理编程",
+      "source_name": "Google",
+      "source_url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/",
+      "published": "2026-09-02",
+      "id": "1e5b8618d900b42a",
+      "category": "模型发布",
+      "nav_label": "Gemini",
+      "bullets": [
+        "谷歌于9月2日发布Gemini 3.8 Flash，相比3.7版强化长流程编程、工具调用和多步骤推理，并推出面向网络防御的专用版本。",
+        "官方公布其在经核验的人类终极考试中得分为百分之五十四点九，并称长流程软件工程表现提升，此处采用厂商发布的结果，不作为独立复测结论。",
+        "模型在复杂任务和高推理档可能使用更多词元，因此单价不变并不保证每次任务更便宜，普通版已向开发者及部分订阅用户开放，网络防御版则限制准入。"
+      ],
+      "narration": "Gemini 3.8 Flash增强推理编程。谷歌于9月2日发布Gemini 3.8 Flash，相比3.7版强化长流程编程、工具调用和多步骤推理，并推出面向网络防御的专用版本。官方公布其在经核验的人类终极考试中得分为百分之五十四点九，并称长流程软件工程表现提升，此处采用厂商发布的结果，不作为独立复测结论。模型在复杂任务和高推理档可能使用更多词元，因此单价不变并不保证每次任务更便宜，普通版已向开发者及部分订阅用户开放，网络防御版则限制准入。",
+      "evidence": "谷歌于9月2日发布Gemini 3.8 Flash，相比3.7版强化长流程编程、工具调用和多步骤推理，并推出面向网络防御的专用版本。官方公布其在经核验的人类终极考试中得分为百分之五十四点九，并称长流程软件工程表现提升，此处采用厂商发布的结果，不作为独立复测结论。模型在复杂任务和高推理档可能使用更多词元，因此单价不变并不保证每次任务更便宜，普通版已向开发者及部分订阅用户开放，网络防御版则限制准入。",
+      "verification": "official_source_reviewed_vendor_evaluation"
+    },
+    {
+      "title": "DeepSeek V4.1 Flash升级视觉与效率",
+      "source_name": "DeepSeek",
+      "source_url": "https://deepseek.com/news/deepseek-v4-1-flash/",
+      "published": "2026-09-10",
+      "id": "0f5ec9d96393ccf6",
+      "category": "模型发布",
+      "nav_label": "DeepSeek",
+      "bullets": [
+        "DeepSeek于9月10日发布V4.1 Flash，采用输入输出非对称结构并原生支持视觉理解，官方称基准能力超过V4 Pro，旧Flash接口已转向新版。",
+        "独立机构AA测得最高推理档智能指数为40分，每项指数测试任务的加权平均成本约零点二七美元，这提供了厂商自测之外的效果与费用参考。",
+        "该评测同时显示模型输出较冗长，综合指数也不能验证所有视觉场景，官方计划9月14日中午再把Pro接口转向新版，截至本期日期该切换仍未生效。"
+      ],
+      "narration": "DeepSeek V4.1 Flash升级视觉与效率。DeepSeek于9月10日发布V4.1 Flash，采用输入输出非对称结构并原生支持视觉理解，官方称基准能力超过V4 Pro，旧Flash接口已转向新版。独立机构AA测得最高推理档智能指数为40分，每项指数测试任务的加权平均成本约零点二七美元，这提供了厂商自测之外的效果与费用参考。该评测同时显示模型输出较冗长，综合指数也不能验证所有视觉场景，官方计划9月14日中午再把Pro接口转向新版，截至本期日期该切换仍未生效。",
+      "evidence": "DeepSeek于9月10日发布V4.1 Flash，采用输入输出非对称结构并原生支持视觉理解，官方称基准能力超过V4 Pro，旧Flash接口已转向新版。独立机构AA测得最高推理档智能指数为40分，每项指数测试任务的加权平均成本约零点二七美元，这提供了厂商自测之外的效果与费用参考。该评测同时显示模型输出较冗长，综合指数也不能验证所有视觉场景，官方计划9月14日中午再把Pro接口转向新版，截至本期日期该切换仍未生效。",
+      "verification": "official_source_and_independent_evaluation_reviewed",
+      "supporting_sources": [
+        {
+          "name": "Artificial Analysis 模型评测",
+          "url": "https://artificialanalysis.ai/models/deepseek-v4-1-flash"
+        }
+      ]
+    }
+  ],
+  "collection_errors": [],
+  "summary_mode": "editorial_complete"
+}
