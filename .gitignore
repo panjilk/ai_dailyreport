@@ -5,3 +5,4 @@ __pycache__/
 .pytest_cache/
 data/broadcast_log.json
 data/source_health.json
+.pytest_tmp/
