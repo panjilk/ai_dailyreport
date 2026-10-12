@@ -1,0 +1,77 @@
+2026-09-30 08:50:17  INFO ThreadId(01) stream_gears::server: crates/stream-gears/src/server.rs:203: Tracing initialized with daily rotation
+2026-09-30 08:50:17  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:349: user: 碳基看硅基
+2026-09-30 08:50:17  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:372: https://archive.biliimg.com/bfs/archive/689eed8b6d01f137aa011744f3ad65ef30260ee8.png
+2026-09-30 08:50:17  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:384: number of concurrent futures: 3
+2026-09-30 08:50:17  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:408: No checkpoint found, starting fresh upload
+2026-09-30 08:50:47  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=akbd&zone=cs: 29611
+2026-09-30 08:51:17  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=tx&zone=cs: 30222
+2026-09-30 08:51:47  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=estx&zone=cs: 29891
+2026-09-30 08:52:17  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=bda2&zone=cs: 29660
+2026-09-30 08:52:47  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=bldsa&zone=cs: 29933
+2026-09-30 08:52:47  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:448: Line { os: Upos, probe_url: "//bb27c891csbd.aikobo.cn/OK", query: "probe_version=20250923&upcdn=akbd&zone=cs", cost: 29611 }
+2026-09-30 08:52:47  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:150: pre_upload: {"build":2140000,"name":"daily_ai_20260930.mp4","profile":"ugcupos/bup","r":"upos","size":11667062,"ssl":0,"version":"2.14.0"}
+2026-09-30 08:53:23  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:555: Upload completed: daily_ai_20260930.mp4 => cost 36.32s, 0.32 MB/s.
+2026-09-30 08:53:23  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:566: Checkpoint saved: 1 files uploaded
+2026-09-30 08:53:23  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:578: All files uploaded successfully, checkpoint removed
+2026-09-30 08:53:24  INFO ThreadId(01) biliup::uploader::bilibili: crates/biliup/src/uploader/bilibili.rs:526: ResponseData { code: 0, data: Some(Object {"aid": Number(117357246678148), "bvid": String("BV1xoa961EA8"), "push_intro": Object {"show": Number(0), "text": String("")}, "submitact_banner": Object {"hotact_text": String(""), "hotact_url": String(""), "list": Null}}), message: "OK", ttl: Some(1) }
+2026-09-30 08:53:24  INFO ThreadId(01) biliup::uploader::bilibili: crates/biliup/src/uploader/bilibili.rs:528: APP接口投稿成功
+2026-10-03 07:11:32  INFO ThreadId(01) stream_gears::server: crates/stream-gears/src/server.rs:203: Tracing initialized with daily rotation
+2026-10-03 07:11:33  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:349: user: 碳基看硅基
+2026-10-03 07:11:33  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:372: https://archive.biliimg.com/bfs/archive/943b499eff69f4c2339d000faf233082b851e4e5.png
+2026-10-03 07:11:33  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:384: number of concurrent futures: 3
+2026-10-03 07:11:33  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:408: No checkpoint found, starting fresh upload
+2026-10-03 07:12:04  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=bldsa&zone=cs: 30920
+2026-10-03 07:12:33  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=akbd&zone=cs: 29370
+2026-10-03 07:13:03  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=tx&zone=cs: 30224
+2026-10-03 07:13:33  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=bda2&zone=cs: 29648
+2026-10-03 07:14:03  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=estx&zone=cs: 30233
+2026-10-03 07:14:03  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:448: Line { os: Upos, probe_url: "//bb27c891csbd.aikobo.cn/OK", query: "probe_version=20250923&upcdn=akbd&zone=cs", cost: 29370 }
+2026-10-03 07:14:03  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:150: pre_upload: {"build":2140000,"name":"daily_ai_20261003.mp4","profile":"ugcupos/bup","r":"upos","size":15133208,"ssl":0,"version":"2.14.0"}
+2026-10-03 07:14:46  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:555: Upload completed: daily_ai_20261003.mp4 => cost 43.24s, 0.35 MB/s.
+2026-10-03 07:14:46  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:566: Checkpoint saved: 1 files uploaded
+2026-10-03 07:14:46  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:578: All files uploaded successfully, checkpoint removed
+2026-10-03 07:14:47  INFO ThreadId(01) biliup::uploader::bilibili: crates/biliup/src/uploader/bilibili.rs:526: ResponseData { code: 0, data: Some(Object {"aid": Number(117373839346407), "bvid": String("BV1uzHb6RErF"), "push_intro": Object {"show": Number(0), "text": String("")}, "submitact_banner": Object {"hotact_text": String(""), "hotact_url": String(""), "list": Null}}), message: "OK", ttl: Some(1) }
+2026-10-03 07:14:47  INFO ThreadId(01) biliup::uploader::bilibili: crates/biliup/src/uploader/bilibili.rs:528: APP接口投稿成功
+2026-10-03 07:14:52  INFO ThreadId(01) stream_gears::server: crates/stream-gears/src/server.rs:203: Tracing initialized with daily rotation
+2026-10-03 07:14:52  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:349: user: 碳基看硅基
+2026-10-03 07:14:57  INFO ThreadId(01) stream_gears::server: crates/stream-gears/src/server.rs:203: Tracing initialized with daily rotation
+2026-10-03 07:14:57  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:349: user: 碳基看硅基
+2026-10-06 07:07:22  INFO ThreadId(01) stream_gears::server: crates/stream-gears/src/server.rs:203: Tracing initialized with daily rotation
+2026-10-06 07:07:23  INFO ThreadId(01) biliup::uploader::credential: crates/biliup/src/uploader/credential.rs:535: 更新cookie
+2026-10-06 07:07:23  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:349: user: 碳基看硅基
+2026-10-06 07:07:25  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:372: https://archive.biliimg.com/bfs/archive/b124816dacfa2800cda153586d4f8086c952125b.png
+2026-10-06 07:07:25  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:384: number of concurrent futures: 3
+2026-10-06 07:07:25  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:408: No checkpoint found, starting fresh upload
+2026-10-06 07:07:54  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=akbd&zone=cs: 28425
+2026-10-06 07:08:24  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=tx&zone=cs: 29784
+2026-10-06 07:08:54  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=estx&zone=cs: 29934
+2026-10-06 07:09:24  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=bldsa&zone=cs: 30648
+2026-10-06 07:09:54  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=bda2&zone=cs: 29485
+2026-10-06 07:09:54  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:448: Line { os: Upos, probe_url: "//bb27c891csbd.aikobo.cn/OK", query: "probe_version=20250923&upcdn=akbd&zone=cs", cost: 28425 }
+2026-10-06 07:09:54  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:150: pre_upload: {"build":2140000,"name":"daily_ai_20261006.mp4","profile":"ugcupos/bup","r":"upos","size":14429053,"ssl":0,"version":"2.14.0"}
+2026-10-06 07:10:38  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:555: Upload completed: daily_ai_20261006.mp4 => cost 43.99s, 0.33 MB/s.
+2026-10-06 07:10:38  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:566: Checkpoint saved: 1 files uploaded
+2026-10-06 07:10:38  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:578: All files uploaded successfully, checkpoint removed
+2026-10-06 07:10:39  INFO ThreadId(01) biliup::uploader::bilibili: crates/biliup/src/uploader/bilibili.rs:526: ResponseData { code: 0, data: Some(Object {"aid": Number(117390817890670), "bvid": String("BV1HMHo6SEsD"), "push_intro": Object {"show": Number(0), "text": String("")}, "submitact_banner": Object {"hotact_text": String(""), "hotact_url": String(""), "list": Null}}), message: "OK", ttl: Some(1) }
+2026-10-06 07:10:39  INFO ThreadId(01) biliup::uploader::bilibili: crates/biliup/src/uploader/bilibili.rs:528: APP接口投稿成功
+2026-10-06 07:10:43  INFO ThreadId(01) stream_gears::server: crates/stream-gears/src/server.rs:203: Tracing initialized with daily rotation
+2026-10-06 07:10:43  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:349: user: 碳基看硅基
+2026-10-06 07:10:47  INFO ThreadId(01) stream_gears::server: crates/stream-gears/src/server.rs:203: Tracing initialized with daily rotation
+2026-10-06 07:10:48  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:349: user: 碳基看硅基
+2026-10-07 07:07:41  INFO ThreadId(01) stream_gears::server: crates/stream-gears/src/server.rs:203: Tracing initialized with daily rotation
+2026-10-07 07:07:41  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:349: user: 碳基看硅基
+2026-10-07 07:07:41  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:372: https://archive.biliimg.com/bfs/archive/1d4584d89f7d4caa49f2b0782740f6ab60edbc34.png
+2026-10-07 07:07:41  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:384: number of concurrent futures: 3
+2026-10-07 07:07:41  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:408: No checkpoint found, starting fresh upload
+2026-10-07 07:08:12  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=bldsa&zone=cs: 30195
+2026-10-07 07:08:41  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=tx&zone=cs: 29112
+2026-10-07 07:09:11  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=estx&zone=cs: 29814
+2026-10-07 07:09:40  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=bda2&zone=cs: 29676
+2026-10-07 07:10:10  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:100: probe_version=20250923&upcdn=akbd&zone=cs: 29581
+2026-10-07 07:10:10  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:448: Line { os: Upos, probe_url: "//upos-cs-upcdntx.bilivideo.com/OK", query: "probe_version=20250923&upcdn=tx&zone=cs", cost: 29112 }
+2026-10-07 07:10:10  INFO ThreadId(01) biliup::uploader::line: crates/biliup/src/uploader/line.rs:150: pre_upload: {"build":2140000,"name":"daily_ai_20261007.mp4","profile":"ugcupos/bup","r":"upos","size":16120277,"ssl":0,"version":"2.14.0"}
+2026-10-07 07:10:56  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:555: Upload completed: daily_ai_20261007.mp4 => cost 46.07s, 0.35 MB/s.
+2026-10-07 07:10:56  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:566: Checkpoint saved: 1 files uploaded
+2026-10-07 07:10:56  INFO ThreadId(01) biliup_cli::uploader: crates/biliup-cli/src/uploader.rs:578: All files uploaded successfully, checkpoint removed
+2026-10-07 07:10:57  INFO ThreadId(01) biliup::uploader::bilibili: crates/biliup/src/uploader/bilibili.rs:526: ResponseData { code: 0, data: Some(Object {"aid": Number(117396488654848), "bvid": String("BV1qqpT66EpW"), "push_intro": Object {"show": Number(0), "text": String("")}, "submitact_banner": Object {"hotact_text": String(""), "hotact_url": String(""), "list": Null}}), message: "OK", ttl: Some(1) }
+2026-10-07 07:10:57  INFO ThreadId(01) biliup::uploader::bilibili: crates/biliup/src/uploader/bilibili.rs:528: APP接口投稿成功

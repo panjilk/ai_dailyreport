@@ -1,0 +1,203 @@
+{
+ "date": "2026-10-07",
+ "window_days": 5,
+ "edition_start_date": "2026-09-21",
+ "title": "AI 日报 · 2026-10-07",
+ "edition_note": "本期 8 条覆盖 10月6日：Mistral 发布 1 万亿参数的 Mistral Large 4 预览版居首，随后是谷歌端侧多模态嵌入模型 EmbeddingGemma 2、阿联酋 TII 的阿联酋方言模型 Falcon-Emirati-7B，以及 Anthropic 的三级网络安全核验计划、OpenAI 的 28 天计划首日提速、OpenAI 与 Ironclad 的合同智能体训练、OpenAI 公开的一批数学成果和 Anthropic 的初创扶持计划。厂商自评与自建基准的数据均在画面要点里注明。",
+ "stories": [
+  {
+   "title": "Mistral 发布 Mistral Large 4 公开预览版",
+   "category": "模型发布",
+   "nav_label": "Mistral",
+   "source_name": "Mistral",
+   "source_url": "https://mistral.ai/news/mistral-large-4/",
+   "published": "2026-10-06",
+   "event_date": "2026-10-06",
+   "event_date_evidence": "Mistral 官方博客《Introducing Mistral Large 4》（mistral.ai/news/mistral-large-4）10月6日上线并写明今日开放公开预览、本月底放出权重；TechCrunch 10月6日报道；IT之家 10月6日 21:56（北京时间）转引官方公告",
+   "verification": "official_announcement_with_vendor_benchmarks_not_independently_verified",
+   "bullets": [
+    "法国 Mistral AI 在 10月6日发布 Mistral Large 4 公开预览版，总参数 1 万亿、每次激活 490 亿，是原生多模态、把指令、推理与智能体能力合在同一个模型里的混合专家架构。",
+    "预览版即日起在 Mistral Studio 开放 API，模型权重本月底放出；在那之前官方联合网络安全机构、受审核的合作方与监管机构做真实环境红队测试，测试版本的审核更宽松、攻防能力更强。",
+    "官方称它在网络安全、金融、法律等企业任务上达到开源模型最好水平，视觉定位等场景还超过闭源前沿模型；模型在 Mistral 欧洲自有数据中心用 3800 块英伟达 Grace Blackwell 训练，支持 160 多种语言。"
+   ],
+   "video_bullets": [
+    "法国 Mistral AI 发布 Mistral Large 4 预览版，总参数一万亿、每次激活四百九十亿，主打多模态、网络安全和推理。官方称它已经超过欧美所有开放权重模型，权重月底才放出下载。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "TechCrunch: Mistral's new 1T model aims to leapfrog closed and open rivals",
+     "url": "https://techcrunch.com/2026/10/06/mistrals-new-1t-model-aims-to-leapfrog-closed-and-open-rivals/"
+    },
+    {
+     "name": "Simon Willison: Introducing Mistral Large 4",
+     "url": "https://simonwillison.net/2026/Oct/6/le-chonk/"
+    }
+   ]
+  },
+  {
+   "title": "谷歌发布端侧多模态嵌入模型 EmbeddingGemma 2",
+   "category": "模型发布",
+   "nav_label": "Google",
+   "source_name": "Google DeepMind",
+   "source_url": "https://deepmind.google/blog/embeddinggemma-2-an-open-lightweight-multimodal-embedding-model/",
+   "published": "2026-10-06",
+   "event_date": "2026-10-06",
+   "event_date_evidence": "谷歌官方博客（deepmind.google/blog/embeddinggemma-2-...）标注 Oct 06, 2026；IT之家 10月7日 06:41（北京时间）报道同一发布",
+   "verification": "official_announcement_with_vendor_benchmarks",
+   "bullets": [
+    "谷歌在 10月6日发布 EmbeddingGemma 2，把文本、代码、图像、视频和音频统一映射到同一个嵌入空间；模型基于 Gemma 4 架构、总参数 7.4 亿，采用 Apache 2.0 许可。",
+    "它是模块化设计，纯文本任务只用 2.7 亿参数，按需加上 1.7 亿参数的视觉编码器和 3 亿参数的音频编码器；输出向量可从 768 维截断到 128 维，本地向量库的存储占用最多缩减 6 倍。",
+    "量化后在 Pixel 11 Pro 上，纯文本权重只需约 191MB 运行内存、完整多模态约 567MB，上下文 8000 token；官方称新版代码检索成绩比上一代提升约 10 分，初代 EmbeddingGemma 下载量已超 2000 万次。"
+   ],
+   "video_bullets": [
+    "谷歌发布 EmbeddingGemma 2，把文字、代码、图像、音频和视频映射到同一个嵌入空间，总参数七点四亿。量化后装在手机上，纯文本只占约一百九十兆内存。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "IT之家：谷歌推出 EmbeddingGemma 2：支持多模态、7.4 亿参数量化手机端运行只需 191MB 内存",
+     "url": "https://www.ithome.com/1/010/125.htm"
+    }
+   ]
+  },
+  {
+   "title": "阿联酋 TII 发布方言模型 Falcon-Emirati-7B",
+   "category": "模型发布",
+   "nav_label": "TII",
+   "source_name": "TII",
+   "source_url": "https://huggingface.co/blog/tiiuae/falcon-emirati",
+   "published": "2026-10-06",
+   "event_date": "2026-10-06",
+   "event_date_evidence": "阿联酋技术创新研究院（TII）在 Hugging Face 官方博客发布《Falcon-Emirati: When an LLM Learns the Dialect, the Culture, and the Nuance》，标注 Published October 6, 2026",
+   "verification": "official_announcement",
+   "bullets": [
+    "阿联酋技术创新研究院 TII 在 10月6日发布 Falcon-Emirati-7B，这是一个专门理解和生成阿联酋方言的 70 亿参数模型，建在自家的阿拉伯语模型 Falcon-H1-Arabic 之上。",
+    "官方说它的目标不是逐词翻译，而是要学到阿联酋口语的词汇、语气和文化背景，比如诗歌与谚语里不靠字面就能读出含义的部分；底座的混合架构让 Mamba 与注意力在每个模块里并行，上下文最长 128K 到 256K token。",
+    "官方解释了为什么选 70 亿这一档：34B 的训练和推理成本对一档方言对话模型不划算，3B 又留不出足够空间装下文化与语言细节。"
+   ],
+   "video_bullets": [
+    "阿联酋技术创新研究院发布 Falcon-Emirati-7B，专门理解和生成阿联酋方言，学的是日常口语的词汇、语气和文化背景，而不只是逐词翻译。它建在自家的阿拉伯语模型之上。"
+   ],
+   "supporting_sources": []
+  },
+  {
+   "title": "Anthropic 合并网络安全计划，分三级开放 Claude",
+   "category": "产品应用",
+   "nav_label": "Anthropic",
+   "source_name": "Anthropic",
+   "source_url": "https://www.anthropic.com/news/cyber-verification-program",
+   "published": "2026-10-06",
+   "event_date": "2026-10-06",
+   "event_date_evidence": "Anthropic 官方公告《Expanding the Cyber Verification Program》于当地时间 10月6日（周二）发布；IT之家 10月7日 06:50（北京时间）引述路透社报道同一公告",
+   "verification": "official_announcement_with_vendor_evaluations",
+   "bullets": [
+    "Anthropic 在 10月6日把玻璃翼计划和旧版网络核验计划合并成新的网络核验计划，分成防御、红队、专项三个层级，每一级都有各自的资质审核和安全管控。",
+    "三个层级都可以使用 Claude Opus 5.5、Claude Sonnet 5.5 和 Claude Mythos 5.1 以及后续新模型；防御层级面向应急响应、恶意软件分析，红队层级只接受机构申请，专项层级用于电网、航空、银行间转账这类关键系统。",
+    "官方称玻璃翼计划的合作方在 4 月到 7 月至少找到 12.9 万个已核实漏洞，Anthropic 自己的开源扫描又发现 5500 个，其中 3.3 万多个被定为严重或高危；官方认为真实数字可能至少是这个的五倍。"
+   ],
+   "video_bullets": [
+    "Anthropic 把两套网络安全计划合并成新的核验计划，分三个层级向审核过的安全团队开放 Opus、Sonnet 和 Mythos 模型。此前半年，合作方已经用它挖出至少十二万个软件漏洞。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "IT之家：已挖出十几万漏洞，Anthropic 向更多安全团队开放其最强 Claude 模型",
+     "url": "https://www.ithome.com/1/010/127.htm"
+    }
+   ]
+  },
+  {
+   "title": "OpenAI 把 GPT-6 Astra 和 6.1 Sol 提速约 50%",
+   "category": "产品应用",
+   "nav_label": "OpenAI",
+   "source_name": "OpenAI",
+   "source_url": "https://x.com/thsottiaux/status/2107158998495748264",
+   "published": "2026-10-06",
+   "event_date": "2026-10-06",
+   "event_date_evidence": "Codex 负责人 Thibault Sottiaux 10月6日在 X 公布提速（x.com/thsottiaux/status/2107158998495748264）；OpenAI 社区论坛同日发布 28 天计划跟进帖；量子位 10月6日 14:45（北京时间）报道",
+   "verification": "vendor_self_report_via_team_lead_social_post",
+   "bullets": [
+    "OpenAI 的 Codex 团队在 10月6日公布 28 天计划首日成果，把 GPT-6 Astra 和 6.1 Sol 的默认推理速度提升了约 50%。",
+    "官方称这次提速在官方订阅和第三方生态里都生效，速度达到每秒 50 个 token；这个计划由 Codex 负责人 Tibo 提出，未来 28 天里每天要么交付一项 Codex 或 Work 的改进，要么给用户做一次完整的额度重置。",
+    "有用户在社区实测后说速度确实变快，但暂时没到官方宣传的数字，也有人指出 6.1 Sol 上线初期因为负载暴增明显变慢，这次提速更像是在补课。"
+   ],
+   "video_bullets": [
+    "OpenAI 的 Codex 团队启动二十八天计划，第一天把 GPT-6 Astra 和 6.1 Sol 的默认推理速度提升约五成。计划期间，团队要么每天交一项改进，要么给用户重置额度。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "OpenAI Community: Day 2 of 28 days of Quality of Life improvements or a full Reset",
+     "url": "https://community.openai.com/t/free-auto-review-day-2-of-28-days-of-quality-of-life-improvements-or-a-full-reset/1403525"
+    }
+   ]
+  },
+  {
+   "title": "OpenAI 用合同任务训练 GPT-6 Astra 操作电脑",
+   "category": "技术洞察",
+   "nav_label": "OpenAI",
+   "source_name": "OpenAI",
+   "source_url": "https://openai.com/index/advancing-computer-use-with-ironclad",
+   "published": "2026-10-06",
+   "event_date": "2026-10-06",
+   "event_date_evidence": "OpenAI 官方文章《Advancing computer use with Ironclad》发布于 October 6, 2026（官方 RSS 时间戳 Tue, 06 Oct 2026 10:00:00 GMT）",
+   "verification": "official_announcement_with_vendor_evaluation",
+   "bullets": [
+    "OpenAI 在 10月6日介绍与合同软件公司 Ironclad 的合作，把配置协议、设置审批规则、复用法律条款这类真实工作流程做成训练和评测任务。",
+    "他们把法律、商务和采购工作拆成 11 项任务，每项有 8 到 50 条验收标准；官方估算熟练用户平均要花 30 到 40 分钟，并用强化学习让模型在真实软件环境里反复练习。",
+    "官方称 GPT-6 Astra 是首个在 Ironclad 任务上训练的前沿模型，内部评测平均分比 GPT-5.6 Sol 高 32%，每次尝试的预估耗时低 48%；这些数字来自厂商自己的评测，还没有独立验证。"
+   ],
+   "video_bullets": [
+    "OpenAI 公布与合同软件公司 Ironclad 的合作，把十一道真实的合同与采购任务做成训练题。官方称 GPT-6 Astra 在这些任务上的平均分比上一代高了三成，耗时少了近一半。"
+   ],
+   "supporting_sources": []
+  },
+  {
+   "title": "OpenAI 公开内部模型产出的一批数学成果",
+   "category": "技术洞察",
+   "nav_label": "OpenAI",
+   "source_name": "OpenAI",
+   "source_url": "https://openai.com/index/sharing-ai-progress-in-mathematics",
+   "published": "2026-10-06",
+   "event_date": "2026-10-06",
+   "event_date_evidence": "OpenAI 官方文章《Sharing AI progress in mathematics》发布于 October 6, 2026（官方 RSS 时间戳 Oct 6）",
+   "verification": "official_announcement_results_not_peer_reviewed",
+   "bullets": [
+    "OpenAI 在 10月6日把内部前沿模型产出的一批数学结果放到 GitHub 公开，同时给出论文修改和引用规范，并为不少证明附上 Lean 语言写的机器可验证形式化。",
+    "官方称一个结果平均消耗的算力约等于三小时 ChatGPT Pro 的深度思考，还公布了 10 份模型推理过程摘要和尝试题目的数量统计。",
+    "OpenAI 说发布方式参考了美国高等研究院数学与人工智能咨询小组的建议，并承诺以后在引用和数学表达上继续改进；这批结果由内部模型产出，还没有经过同行评审。"
+   ],
+   "video_bullets": [
+    "OpenAI 公开了内部前沿模型做出的一批数学结果，其中不少证明附带了计算机能验证的形式化版本。官方说，一个结果平均要花掉约三小时 ChatGPT Pro 的思考算力。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "Advisory Group on Mathematics and Artificial Intelligence（IAS 咨询小组）",
+     "url": "https://agmai.org/"
+    }
+   ]
+  },
+  {
+   "title": "Anthropic 给初创公司免费一年 Claude Team",
+   "category": "行业动态",
+   "nav_label": "Anthropic",
+   "source_name": "TechCrunch",
+   "source_url": "https://techcrunch.com/2026/10/06/anthropic-gives-startups-a-free-year-of-enterprise-service-and-1000-in-token-credits/",
+   "published": "2026-10-06",
+   "event_date": "2026-10-06",
+   "event_date_evidence": "TechCrunch 报道《Anthropic is giving startups a free year of Claude Team and $1,000 in credits》，标注 9:00 AM PDT · October 6, 2026；Anthropic 在当地时间 10月6日（周二）公布",
+   "verification": "media_report_of_vendor_program",
+   "bullets": [
+    "Anthropic 在 10月6日扩大面向初创公司的 Claude for Startups 计划，符合条件的公司可以免费用一年 Claude Team，最多五个高级席位，并拿到 1000 美元模型额度。",
+    "官方在说明里表示，做这个计划是因为他们相信 AI 的好处主要通过基于模型创业的公司到达大多数人，而不是模型本身，所以要和创始人与开发者紧密合作。",
+    "入选公司还能接入 Claude Marketplace 做插件，并与 Anthropic 的应用 AI 团队预约线上咨询；成立五年内、或者最近两年拿到过融资的公司都可以申请。"
+   ],
+   "video_bullets": [
+    "Anthropic 扩大面向初创公司的扶持计划，符合条件的企业可以免费用一年 Claude Team，最多五个高级席位，外加一千美元的模型额度，还能接入插件市场。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "Claude for Startups 计划页",
+     "url": "https://claude.com/programs/startups"
+    }
+   ]
+  }
+ ]
+}

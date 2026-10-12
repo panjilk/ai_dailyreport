@@ -1,0 +1,192 @@
+{
+  "date": "2026-10-03",
+  "window_days": 5,
+  "edition_start_date": "2026-09-21",
+  "title": "AI 日报 · 2026-10-03",
+  "edition_note": "本期 9 条覆盖 9月30日 到 10月2日：Kimi K3 与 GLM 5.3 上架 OpenAI 企业市场、腾讯 WorkBuddy 独家接入匿名模型 Space Bunny、openJiuwen 首发自演进模型路由、Manus 2.0 与个人智能体 Cue、英伟达 64GB 版 DGX Spark、Meta 的 Muse 登陆智能眼镜、谷歌 SynthID Bio 给 AI 设计的蛋白质加水印、苹果因 AI 智能体收紧 macOS 全盘访问、Anthropic 投 1 亿美元培训万名工程师。厂商自评数据与媒体转述的限制均在画面要点注明。",
+  "stories": [
+    {
+      "title": "Kimi K3 与 GLM 5.3 上架 OpenAI 企业市场",
+      "category": "开发生态",
+      "nav_label": "Kimi K3",
+      "source_name": "IT之家",
+      "source_url": "https://www.ithome.com/1/008/864.htm",
+      "published": "2026-09-30T18:19:18+08:00",
+      "event_date": "2026-09-30",
+      "event_date_evidence": "IT之家 9月30日 18:19（北京时间）报道，Baseten 当日宣布与 OpenAI 达成合作",
+      "verification": "media_report_of_company_announcement_no_benchmark_data",
+      "bullets": [
+        "美国 AI 基础设施公司 Baseten 在 9月30日宣布与 OpenAI 合作，成为 OpenAI 企业市场上首批提供开源模型推理服务的厂商之一。",
+        "企业用户可在 Codex 或 Responses API 里调用 Kimi K3、GLM 5.3 等开源模型；Kimi K3 由月之暗面开发，宣称参数 2.8 万亿，原生支持视觉，上下文 100 万 token。",
+        "限制是 Baseten 承诺模型运行在美国服务器并对提示词零数据保留，目前只覆盖部分开源模型，实际可调用型号与定价需在平台上核对。"
+      ],
+      "video_bullets": [
+        "月之暗面的 Kimi K3 和智谱的 GLM 5.3 进入 OpenAI 企业市场，企业用户能在 Codex 里直接调用这些开源模型，推理全程在美国服务器上完成。"
+      ]
+    },
+    {
+      "title": "腾讯 WorkBuddy 独家接入 Space Bunny",
+      "category": "产品应用",
+      "nav_label": "腾讯",
+      "source_name": "IT之家",
+      "source_url": "https://www.ithome.com/1/009/335.htm",
+      "published": "2026-10-02T10:05:00+08:00",
+      "event_date": "2026-10-02",
+      "event_date_evidence": "IT之家 10月2日 10:05（北京时间）报道腾讯 WorkBuddy 当日宣布独家支持",
+      "verification": "media_report_of_product_announcement_no_benchmark_data",
+      "bullets": [
+        "腾讯 WorkBuddy 在 10月2日宣布国内独家接入匿名 Flash 模型 Space Bunny，10月2日到 10月7日提供限时折扣。",
+        "Space Bunny 是 9月23日上线的匿名模型，上下文 100 万 token，支持文本、图像和视频输入，推理强度可调并支持工具调用。",
+        "限制是官方没有说明该模型出自哪家，能力和评测数据都未公开；IT之家提到它 9月27日调用量在两个平台都排第一，但匿名模型靠折扣拉量，长期可用性不确定。"
+      ],
+      "video_bullets": [
+        "腾讯 WorkBuddy 宣布国内独家接入匿名模型 Space Bunny，它有一百万 token 上下文，文本、图片、视频都能读，推理强度还能调，上周调用量排在榜首。"
+      ]
+    },
+    {
+      "title": "openJiuwen 首发自演进模型路由",
+      "category": "开发生态",
+      "nav_label": "openJiuwen",
+      "source_name": "量子位",
+      "source_url": "https://www.qbitai.com/2026/10/500098.html",
+      "published": "2026-10-02T15:34:15+08:00",
+      "event_date": "2026-10-02",
+      "event_date_evidence": "量子位 10月2日 15:34（北京时间）发布 openJiuwen X-Router 首发报道",
+      "verification": "media_report_official_claim_vendor_own_benchmark_flagged",
+      "bullets": [
+        "华为牵头的开源智能体平台 openJiuwen 在 10月2日发布 X-Router 自演进模型路由，在智能体和模型之间加一层调度，决定这一轮请求该交给哪个模型、用什么策略。",
+        "这套系统分三层：离线刻画并在线刷新每个模型的能力画像，结合缓存亲和与实时负载做多目标优化决策，再用执行反馈持续修正选择，决策与执行互不耦合。",
+        "限制是它面向昇腾生态做亲和优化，官方给出的减少 50% 以上 token 消耗是自家实测数据，没有第三方复现；状态层丢失时只会降级成冷路由，效果会打折扣。"
+      ],
+      "video_bullets": [
+        "openJiuwen 发布 X-Router 模型路由，先判断任务难度再挑模型，简单问题交给便宜的小模型，官方实测能省下五成以上的 token 消耗。"
+      ]
+    },
+    {
+      "title": "Manus 2.0 发布个人智能体 Cue",
+      "category": "产品应用",
+      "nav_label": "Manus",
+      "source_name": "量子位",
+      "source_url": "https://www.qbitai.com/2026/09/499592.html",
+      "published": "2026-09-30T15:58:37+08:00",
+      "event_date": "2026-09-30",
+      "event_date_evidence": "量子位 9月30日 15:58（北京时间）报道 Manus 当日发布 2.0 与 Cue",
+      "verification": "media_report_of_product_launch_vendor_own_numbers_flagged",
+      "supporting_sources": [
+        {
+          "name": "Manus 官方博客：Introducing Manus 2.0",
+          "url": "https://manus.im/zh-cn/blog/introducing-manus-2-0"
+        }
+      ],
+      "bullets": [
+        "恢复独立运营的 Manus 在 9月30日发布回归后首个大版本 Manus 2.0，同时上线个人智能体应用 Cue，每个智能体都有自己的邮箱、电话号码、钱包和电脑。",
+        "Cue 里的智能体能在授权预算内付款、代接电话并留摘要，还能把多个助手指派不同职责拉进同一个群协作；桌面端升级为 Studio，新增可直接上手改的视频时间线和游戏模板。",
+        "限制是 Cue 处于邀请码抢先体验，先面向海外用户开放，国内版团队仍在组建；官方给出的自研框架 Cascade 省 token、省时间数据也来自自家测试。"
+      ],
+      "video_bullets": [
+        "Manus 发布 2.0 版本和个人智能体 Cue，给每个助手配上邮箱、电话号码和钱包，能在授权预算内付款、代接电话，还能把几个助手拉进一个群分头办事。"
+      ]
+    },
+    {
+      "title": "英伟达发布 64GB 版 DGX Spark",
+      "category": "产品应用",
+      "nav_label": "NVIDIA",
+      "source_name": "IT之家",
+      "source_url": "https://www.ithome.com/1/009/359.htm",
+      "published": "2026-10-02T13:00:00+08:00",
+      "event_date": "2026-10-02",
+      "event_date_evidence": "IT之家 10月2日与英伟达官方博客同日发布 DGX Spark 64GB 版本",
+      "verification": "media_report_of_product_launch_official_specs",
+      "supporting_sources": [
+        {
+          "name": "NVIDIA Blog：DGX Spark 64GB",
+          "url": "https://blogs.nvidia.com/blog/local-ai-dgx-spark-64gb-sync/"
+        }
+      ],
+      "bullets": [
+        "英伟达在 10月2日推出 64GB 内存版 DGX Spark 桌面 AI 计算机，起售价 4999 美元，10月23日发售，宏碁、戴尔、华硕等 OEM 也会推出整机。",
+        "它基于 GB10 Grace-Blackwell 芯片和统一内存架构，可供模型权重与 KV 缓存使用的内存约 56GB，支持本地部署 Qwen3.8-27B 等开源模型。",
+        "限制是这套平台面向研究人员和小型团队，4999 美元起远高于普通消费设备；它内置 ConnectX-7 网卡，官方称两台组网跑 Qwen3.8-27B 最高提速 1.7 倍，属自测数据。"
+      ],
+      "video_bullets": [
+        "英伟达发布 64GB 内存版 DGX Spark 桌面 AI 超算，售价 4999 美元，能在本地跑 Qwen3.8-27B 这类开源模型，还可以把四台机器连起来当小集群。"
+      ]
+    },
+    {
+      "title": "Meta 把智能体 Muse 搬上智能眼镜",
+      "category": "产品应用",
+      "nav_label": "Meta",
+      "source_name": "IT之家",
+      "source_url": "https://www.ithome.com/1/009/363.htm",
+      "published": "2026-10-02T13:38:14+08:00",
+      "event_date": "2026-10-02",
+      "event_date_evidence": "IT之家 10月2日（北京时间）报道 Meta 当日宣布 Muse 将登陆智能眼镜",
+      "verification": "media_report_of_company_announcement_privacy_terms_noted",
+      "bullets": [
+        "Meta 在 10月2日宣布智能体 Muse 将于近期登陆智能眼镜，用户不用掏出手机，说一句唤醒词就能让它在后台执行任务并回报结果。",
+        "Muse 基于 Muse Spark 模型运行，核心环境是云端一台持续在线的私有 Linux 虚拟机，自带浏览器、文件系统和终端，能自己写代码、拆给子智能体，也能生成文档和数据仪表盘。",
+        "限制是 Meta 表示 Muse 数据默认会用于训练未来模型，除非用户主动退出；云端环境 Meta 自身仍有访问权限，机密虚拟机选项要今年晚些时候才推出。"
+      ],
+      "video_bullets": [
+        "Meta 把智能体 Muse 搬上智能眼镜，说一句话就能让它在后台订机票、查价格、买东西，它跑在云端一台常驻的 Linux 虚拟机里，还能自己写代码。"
+      ]
+    },
+    {
+      "title": "谷歌给 AI 设计的蛋白质加水印",
+      "category": "技术洞察",
+      "nav_label": "Google",
+      "source_name": "Google DeepMind 官方博客",
+      "source_url": "https://deepmind.google/blog/introducing-synthid-bio/",
+      "published": "2026-09-30",
+      "event_date": "2026-09-30",
+      "event_date_evidence": "Google DeepMind 官方博客 SynthID Bio 文章标注 September 30, 2026",
+      "verification": "official_announcement_wet_lab_results_authors_own",
+      "bullets": [
+        "谷歌 DeepMind 在 9月30日推出 SynthID Bio，把水印技术用进合成生物学：把不可感知的签名写进氨基酸序列和三维结构，在数字模型和合成出的实物蛋白上都能验出。",
+        "他们用 AlphaProteo 和改造过的 ProteinMPNN 做了 VEGF-A 等三种靶点蛋白，水印版本的命中率、结合亲和力和序列多样性与未加水印版本相当。",
+        "限制是这仍是证明概念阶段的成果，只覆盖蛋白质一类分子；官方也承认新的 AI 设计可能绕过现有 DNA 合成筛查，水印要起作用还需下游合成厂商配合。"
+      ],
+      "video_bullets": [
+        "谷歌 DeepMind 推出 SynthID Bio，把水印写进 AI 设计的蛋白质序列，合成出来的实物蛋白也能验出来，实验室测试显示加了水印的蛋白结合能力没有受影响。"
+      ]
+    },
+    {
+      "title": "苹果因 AI 智能体收紧 Mac 权限",
+      "category": "行业动态",
+      "nav_label": "Apple",
+      "source_name": "TechCrunch AI",
+      "source_url": "https://techcrunch.com/2026/10/02/apple-says-its-tightening-macos-full-disk-access-controls-due-to-new-risks-from-ai-agents/",
+      "published": "2026-10-02",
+      "event_date": "2026-10-02",
+      "event_date_evidence": "TechCrunch 10月2日报道苹果当日发布开发者公告；苹果开发者官网同日发文",
+      "verification": "media_report_of_company_statement",
+      "bullets": [
+        "苹果在 10月2日表示，正在为 macOS 的全盘访问权限增加新的控制，理由是 AI 智能体让这一级别的访问权限风险明显变大。",
+        "全盘访问原本是为了让备份正常工作，开启后应用可以读到文件、邮件、信息和浏览历史；苹果说一些开发者正以可能把用户置于风险中的方式使用它，今后授予这类权限需要非常明确的用户操作。",
+        "限制是苹果没有公布新控制的具体界面和上线时间；背景是此前有专栏作者称 Meta 的 Muse 读到了他的私信，Meta 否认该说法，另有报道指出 ChatGPT 的 Mac 应用存在漏洞。"
+      ],
+      "video_bullets": [
+        "苹果开始收紧 macOS 的全盘访问权限，因为 AI 智能体拿到这个权限后能读到文件、邮件和聊天记录，风险太大，以后开启需要用户非常明确地确认。"
+      ]
+    },
+    {
+      "title": "Anthropic 投 1 亿美元培训工程师",
+      "category": "行业动态",
+      "nav_label": "Anthropic",
+      "source_name": "IT之家",
+      "source_url": "https://www.ithome.com/1/009/376.htm",
+      "published": "2026-10-02T23:03:54+08:00",
+      "event_date": "2026-10-02",
+      "event_date_evidence": "Anthropic 当地时间 10月2日宣布推出 Claude Frontier Academy；IT之家 10月3日 报道",
+      "verification": "media_report_of_company_announcement",
+      "bullets": [
+        "Anthropic 在当地时间 10月2日推出 Claude Frontier Academy 培训项目，计划投入 1 亿美元，目标是在 2027 年底前培养 1 万名前沿部署工程师。",
+        "首批学员来自埃森哲、贝恩、德勤、麦肯锡、摩根士丹利、诺和诺德和澳大利亚联邦银行；先参加数天线下培训并走完场景选择与安全审查，考核通过后进入 12 周驻训做真实项目。",
+        "限制是首批学员预计 2027 年初才拿到认证，项目效果短期内无法验证；报道也指出前沿部署工程师正成为 AI 行业最抢手的岗位之一，人才供给仍跟不上需求。"
+      ],
+      "video_bullets": [
+        "Anthropic 拿出 1 亿美元办培训学院，计划在 2027 年底前培养一万名前沿部署工程师，首批学员来自埃森哲、德勤、麦肯锡这些机构。"
+      ]
+    }
+  ]
+}

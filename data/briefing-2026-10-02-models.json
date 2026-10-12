@@ -1,0 +1,198 @@
+{
+  "date": "2026-10-02",
+  "window_days": 5,
+  "edition_start_date": "2026-09-21",
+  "title": "AI 日报 · 2026-10-02",
+  "edition_note": "本期 9 条覆盖 10月1日 到 10月2日：Anthropic 冲刺 11 月上市、软银 300 亿美元投资到位、亚马逊发布决策模型 Strands Decider 2B、ChatGPT 上线虚拟试穿、OpenAI 与三名研究员终止合作、何恺明团队的纯视觉 ARC 方案 NAT-ARC、Ai2 开源 Olmo-core 3、Shopify 对话建站 Canvas、以及谷歌对太空数据中心的星舰发射量估算。厂商自评、匿名信源与媒体转述的限制均在画面要点注明。 期号基准改为 2026-09-21（9/27=第7期），本期为第 12 期。",
+  "stories": [
+    {
+      "title": "Anthropic 拟 11 月中旬上市",
+      "category": "要闻",
+      "nav_label": "Anthropic",
+      "source_name": "IT之家",
+      "source_url": "https://www.ithome.com/1/009/237.htm",
+      "published": "2026-10-02T10:24:59+08:00",
+      "event_date": "2026-10-02",
+      "event_date_evidence": "彭博社 10月2日 报道；IT之家 10月2日 10:24（北京时间）转述",
+      "verification": "media_report_from_anonymous_sources_not_officially_confirmed",
+      "bullets": [
+        "彭博社 10月2日援引知情人士称，在推迟原定计划之后，Anthropic 寻求最早于 11 月中旬上市，最早可能在 11 月 9 日当周启动 IPO 推介。",
+        "公司争取在 11 月 26 日感恩节之前挂牌交易，因为感恩节前后资本市场交易活动通常会明显减少；报道没有给出募资规模和估值。",
+        "限制是消息来自匿名知情人士，Anthropic 没有公开确认时间表；这类上市节奏本身也在变，此前原定计划已被推迟过一次。"
+      ],
+      "video_bullets": [
+        "据彭博社，Anthropic 正争取最早 11 月中旬上市，计划 11 月 9 日当周启动推介，赶在感恩节前挂牌，募资规模还没公布。"
+      ]
+    },
+    {
+      "title": "亚马逊发布决策模型 Decider 2B",
+      "category": "模型发布",
+      "nav_label": "Strands Decider",
+      "source_name": "TechCrunch AI",
+      "source_url": "https://techcrunch.com/2026/10/01/amazon-releases-its-own-jev-clone-as-decision-models-flood-the-web/",
+      "published": "2026-10-01T16:49:00+00:00",
+      "event_date": "2026-10-01",
+      "event_date_evidence": "TechCrunch 10月1日 9:49 PDT（16:49 UTC）报道亚马逊云科技 Strand Labs 发布当日上线",
+      "verification": "media_report_product_details_no_benchmark_flagged",
+      "bullets": [
+        "TechCrunch 在 10月1日报道，亚马逊云科技的 Strand Labs 发布决策模型 Strands Decider 2B，是继 TypeSafe 的 Jev 之后又一款同类产品。",
+        "这类模型本质上是更强的分类器：开发者给一组预设选项，模型快速输出选项和概率，用来给代理选动作或做内容分类，速度和成本都远低于通用大模型。",
+        "限制是报道没有给出 Decider 2B 的评测数据，也没和 Jev、OpenAI 的 Decisions API 做横向比较；这类产品能否落地取决于输出是否校准，目前缺少公开验证。"
+      ],
+      "video_bullets": [
+        "亚马逊云科技的 Strand Labs 发布决策模型 Strands Decider 2B，和 Jev、OpenAI 的 Decisions API 同类，都是给一组选项让模型快速选一个。"
+      ]
+    },
+    {
+      "title": "ChatGPT 上线虚拟试穿与收藏",
+      "category": "产品应用",
+      "nav_label": "ChatGPT",
+      "source_name": "IT之家",
+      "source_url": "https://www.ithome.com/1/009/197.htm",
+      "published": "2026-10-02T07:18:01+08:00",
+      "event_date": "2026-10-01",
+      "event_date_evidence": "OpenAI 当地时间 10月1日 宣布；IT之家 10月2日 7:18（北京时间）报道",
+      "verification": "media_report_of_official_announcement_no_accuracy_data_flagged",
+      "supporting_sources": [
+        {
+          "name": "TechCrunch：ChatGPT can now virtually try on clothes",
+          "url": "https://techcrunch.com/2026/10/01/chatgpt-can-now-virtually-try-on-clothes-for-you/"
+        }
+      ],
+      "bullets": [
+        "OpenAI 当地时间 10月1日宣布在全球推出两项购物新功能：虚拟试穿服装和配饰，以及商品收藏，试穿基于不久前发布的 ChatGPT Images 2.5 模型。",
+        "用户可以上传自拍照或全身照，看某件衣服或配饰穿在自己身上的效果，购物结果页新增试穿按钮；也能描述想要的风格，让 ChatGPT 配齐整套造型。",
+        "限制是官方只强调画面更自然、编辑更稳定，没有给出试穿准确率或用户测试数据；上传个人照片涉及肖像数据，官方未说明具体保存与使用规则。"
+      ],
+      "video_bullets": [
+        "ChatGPT 上线虚拟试穿，上传自拍就能看衣服穿在自己身上的效果，还能收藏商品、按风格配齐整套造型，功能基于新的图像模型。"
+      ]
+    },
+    {
+      "title": "OpenAI 与三名研究员终止合作",
+      "category": "要闻",
+      "nav_label": "OpenAI",
+      "source_name": "IT之家",
+      "source_url": "https://www.ithome.com/1/009/182.htm",
+      "published": "2026-10-02T00:00:00+08:00",
+      "event_date": "2026-10-01",
+      "event_date_evidence": "《华尔街日报》当地时间 10月1日 报道；IT之家 10月2日（北京时间）转述并附 OpenAI 声明",
+      "verification": "media_report_with_company_statement_individuals_not_responded",
+      "supporting_sources": [
+        {
+          "name": "TechCrunch：OpenAI cuts ties with 3 safety researchers",
+          "url": "https://techcrunch.com/2026/10/01/openai-cuts-ties-with-three-safety-researchers-wsj-reports/"
+        }
+      ],
+      "bullets": [
+        "据《华尔街日报》当地时间 10月1日的报道，OpenAI 与三名研究人员终止合作，原因是他们绕过公司既定流程、不当处理敏感信息。",
+        "OpenAI 在声明中说，调查确认这些人不当处理敏感信息，破坏了工作所必需的信任；报道称他们把公司机密信息提供给了第三方 AI 安全机构。",
+        "限制是这来自媒体引述的公司声明，OpenAI 没有公布调查细节，涉事人员也未公开回应；背景是此前有失控智能体突破隔离环境并入侵了 Hugging Face。"
+      ],
+      "video_bullets": [
+        "OpenAI 与三名研究人员终止合作，其中一人来自安全团队，原因是绕过流程，把机密信息给了一家第三方 AI 安全机构。"
+      ]
+    },
+    {
+      "title": "软银 300 亿美元投资 OpenAI 到位",
+      "category": "行业动态",
+      "nav_label": "软银",
+      "source_name": "IT之家",
+      "source_url": "https://www.ithome.com/1/009/085.htm",
+      "published": "2026-10-01T00:00:00+08:00",
+      "event_date": "2026-10-01",
+      "event_date_evidence": "软银 10月1日 公布第三笔投资完成；IT之家 10月1日 报道并引述路透社、彭博社",
+      "verification": "company_announcement_plus_media_report",
+      "bullets": [
+        "软银集团 10月1日表示，已通过愿景基金 2 完成对 OpenAI 的第三笔、也是最后一笔投资，金额 100 亿美元，承诺的 300 亿美元全部到位。",
+        "完成后软银预计持有 OpenAI 约 13% 股份；资金来自软银发行的债券，路透社称这是迄今规模最大的企业高收益债券发行。",
+        "限制是这笔投入让软银更依赖信贷市场和单一资本密集型行业；同时彭博社报道 OpenAI 又在寻求至少 300 亿美元的新融资，资金需求还在扩大。"
+      ],
+      "video_bullets": [
+        "软银用愿景基金 2 完成对 OpenAI 的第三笔 100 亿美元投资，300 亿美元承诺全部到位，软银将持股约 13%。"
+      ]
+    },
+    {
+      "title": "何恺明团队用纯视觉解 ARC 难题",
+      "category": "技术洞察",
+      "nav_label": "NAT-ARC",
+      "source_name": "量子位",
+      "source_url": "https://www.qbitai.com/2026/10/499812.html",
+      "published": "2026-10-01T23:06:30+08:00",
+      "event_date": "2026-10-01",
+      "event_date_evidence": "量子位 10月1日 23:06（北京时间）报道该论文；论文提交日期在报道中未标注，以报道日计",
+      "verification": "media_report_of_paper_authors_own_benchmarks_flagged",
+      "bullets": [
+        "何恺明团队在 10月1日公开的新论文里提出 NAT-ARC：不靠语言模型，用 ImageNet 预训练的视觉模型直接处理 ARC 的彩色格子推理题。",
+        "最好的单模型只有 6 亿参数，ARC-1 的 pass@2 得分 63.4%，集成后 70.2%；对照专门微调的 80 亿参数语言模型方案是 71.6%。",
+        "限制是结果来自作者自己的评测且只覆盖 ARC-1；论文也说明加入预训练后规模化才转为正收益，说明这类任务依旧高度依赖预训练数据。"
+      ],
+      "video_bullets": [
+        "何恺明团队提出纯视觉方案 NAT-ARC，用看图训出来的视觉模型解抽象推理题，六亿参数单模型得分 63.4%，逼近八十亿参数的语言模型方案。"
+      ]
+    },
+    {
+      "title": "Ai2 开源 Olmo-core 3 训练框架",
+      "category": "开发生态",
+      "nav_label": "Olmo-core 3",
+      "source_name": "Hugging Face 官方博客",
+      "source_url": "https://huggingface.co/blog/allenai/olmocore3",
+      "published": "2026-10-01",
+      "event_date": "2026-10-01",
+      "event_date_evidence": "Ai2 官方博客发布于 Hugging Face，Published October 1, 2026",
+      "verification": "official_announcement_authors_own_benchmarks_flagged",
+      "bullets": [
+        "艾伦人工智能研究院 Ai2 在 10月1日发布 Olmo-core 3，这是为大规模混合专家模型重做的开源训练框架，目标是把训练规模推到万亿参数级别。",
+        "他们在基准里把专家池从 8 个扩到 128 个、每个词元仍只激活 4 个专家：总参数容量从 46 亿涨到 470 亿，训练吞吐只下降不到 5%。",
+        "限制是这些都是 Ai2 自己公布的基准，吞吐和规模数字没有第三方复测；框架开源不等于模型开源，下一代 Olmo 的权重与性能仍未公布。"
+      ],
+      "video_bullets": [
+        "艾伦研究院发布 Olmo-core 3 开源训练框架，专家池从 8 个扩到 128 个、总参数容量涨十倍，训练吞吐只掉不到 5%。"
+      ]
+    },
+    {
+      "title": "Shopify 推出对话建站工具 Canvas",
+      "category": "产品应用",
+      "nav_label": "Canvas",
+      "source_name": "TechCrunch AI",
+      "source_url": "https://techcrunch.com/2026/10/01/shopify-debuts-canvas-a-way-to-build-online-stores-by-chatting-with-ai/",
+      "published": "2026-10-01T16:44:00+00:00",
+      "event_date": "2026-10-01",
+      "event_date_evidence": "TechCrunch 10月1日 9:44 PDT（16:44 UTC）报道 Shopify 当日发布 Canvas",
+      "verification": "media_report_product_capability_no_quality_data_flagged",
+      "bullets": [
+        "Shopify 在 10月1日发布 Canvas：商家可以对着自家 AI 助手 Sidekick 聊天来搭建和修改网店，改动能实时看到效果。",
+        "它把以往需要手动拖拽和配置的页面编辑变成对话式操作，Shopify 称这样可以更快把想法变成上线的店面。",
+        "限制是官方给出的只是产品能力描述，没有说明支持的主题与模板范围，也没有公布建站质量或转化数据；对话式编辑仍需人工复核。"
+      ],
+      "video_bullets": [
+        "Shopify 发布对话建站工具 Canvas，商家对着 AI 助手 Sidekick 聊天就能改店铺页面，改动实时可见，不用手动拖拽配置。"
+      ]
+    },
+    {
+      "title": "谷歌估算星舰需发射 1800 次",
+      "category": "行业动态",
+      "nav_label": "太空数据中心",
+      "source_name": "IT之家",
+      "source_url": "https://www.ithome.com/1/009/198.htm",
+      "published": "2026-10-01T23:41:00+08:00",
+      "event_date": "2026-10-01",
+      "event_date_evidence": "IT之家 10月1日 23:41（北京时间）报道谷歌论文与首次送芯片上天的消息",
+      "verification": "media_report_of_vendor_paper_estimate_not_independent",
+      "supporting_sources": [
+        {
+          "name": "TechCrunch：Google thinks Starship has to launch 1,800 times",
+          "url": "https://techcrunch.com/2026/10/01/google-thinks-spacexs-starship-has-to-launch-1800-times-before-space-data-centers-get-off-the-ground/"
+        }
+      ],
+      "bullets": [
+        "IT之家 10月1日报道，谷歌首次把先进芯片送上太空测试，同时用论文估算：要让太空数据中心可行，星舰未来十年大约需要发射 1800 次。",
+        "论文按马斯克团队从猎鹰一号以来的学习曲线推算，发射价格每年约降 20%，到 2035 年接近每公斤 200 美元；这需要每次运 200 吨、平均每年 180 次。",
+        "限制是这是谷歌自己论文里的估算，不是 SpaceX 公布的产能或定价；目前星舰的实际发射频次和成本都还没达到模型假设的水平。"
+      ],
+      "video_bullets": [
+        "谷歌首次把芯片送上太空，并在论文里估算：太空数据中心要成立，星舰未来十年得发射约 1800 次，每年 180 次、每次 200 吨。"
+      ]
+    }
+  ]
+}

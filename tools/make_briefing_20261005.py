@@ -1,0 +1,210 @@
+# -*- coding: utf-8 -*-
+"""生成 2026-10-05 期 AI 日报稿件（第 15 期）。
+
+选题全部由 Hermes 逐条核对原文后手写，来源见每条 source_url / supporting_sources。
+"""
+import json
+from pathlib import Path
+
+DATE = "2026-10-05"
+
+stories = [
+    {
+        "title": "Tavus 发布首个人类交互模型 Griffin",
+        "category": "模型发布",
+        "nav_label": "Tavus",
+        "source_name": "Tavus",
+        "source_url": "https://www.tavus.io/griffin",
+        "published": "2026-10-01",
+        "event_date": "2026-10-01",
+        "event_date_evidence": "Tavus 官方页面标注 San Francisco, California — October 1st, 2026 发布 Griffin",
+        "verification": "official_announcement_with_vendor_study",
+        "bullets": [
+            "美国 AI 视频公司 Tavus 在 10月1日发布 Griffin 模型，官方称它是全球第一个人机交互模型，把实时感知、对话判断与表情视频生成合并成一个视频到视频系统。",
+            "在一分钟视频通话测试中，48% 的参与者以为自己在和真人说话，而 Tavus 上一代由 Phoenix-4.5、Sparrow-2、Raven-1 组成的系统最高只有 2% 通过率。",
+            "官方称它在 NVIDIA 的双向视频基准中排第一、临场反应领先第二名 37%；目前只以 Griffin-Lite 研究预览形式开放给少量测试者，尚未上线正式平台。",
+        ],
+        "video_bullets": [
+            "AI 视频公司 Tavus 发布 Griffin 模型，把实时对话和表情合成合进一个视频系统。一分钟视频通话里，48% 的人以为对方是真人，上一代只有 2%。目前还只向少量测试者开放。",
+        ],
+        "supporting_sources": [
+            {"name": "极客公园：点头、抢话、会脸红，一半人分辨不出这是位「AI 小姐姐」",
+             "url": "http://www.geekpark.net/news/372075"},
+        ],
+    },
+    {
+        "title": "Anthropic 给 Claude Code 加 mods 插件机制",
+        "category": "开发生态",
+        "nav_label": "Anthropic",
+        "source_name": "Anthropic",
+        "source_url": "https://claude.com/blog/claude-code-mods",
+        "published": "2026-10-01",
+        "event_date": "2026-10-01",
+        "event_date_evidence": "Anthropic 官方博客《Customize Claude Code with mods》2026年10月1日发布，随 Claude Code 2.1.287 上线",
+        "verification": "official_announcement_with_docs_and_example_repos",
+        "bullets": [
+            "Anthropic 在 10月1日给 Claude Code 加上 mods 机制，mod 是跑在进程内的 JavaScript 或 TypeScript 函数，能改写送进模型的提示词、拦截或重写工具调用、批准或拒绝权限请求，还能绘制自定义界面。",
+            "官方已把内置的 diff 面板改用 mod 实现，并放出 AGENTS.md、You Should Know 等示例；mod 随插件分发，在命令行或桌面端用 /plugin 安装，要求 Claude Code 2.1.287 及以上。",
+            "mod 的机器权限与 Claude Code 本体相同、不做沙箱隔离，官方提示只安装可信插件；Team 与 Enterprise 会预装 sec-default 安全 mod，限制高风险改动。",
+        ],
+        "video_bullets": [
+            "Claude Code 上线 mods 机制，用几十行 TypeScript 就能改写提示词、拦截工具调用、甚至换掉界面。它和本体同权限、没有沙箱，官方提醒只装可信的插件。",
+        ],
+        "supporting_sources": [
+            {"name": "Claude Code Docs：Mods overview",
+             "url": "https://code.claude.com/docs/en/plugins/mods/overview"},
+            {"name": "The New Stack：Anthropic's mods let you change Claude Code's look and behavior",
+             "url": "https://thenewstack.io/anthropic-claude-code-mods-plugins/"},
+        ],
+    },
+    {
+        "title": "GPT-6 Astra Ultrafast 高速模式上线",
+        "category": "产品应用",
+        "nav_label": "OpenAI",
+        "source_name": "NVIDIA",
+        "source_url": "https://blogs.nvidia.com/blog/gpus-openai-gpt-6-astra-ultrafast/",
+        "published": "2026-10-01T23:44:00+00:00",
+        "event_date": "2026-10-01",
+        "event_date_evidence": "NVIDIA 官方博客 2026-10-01 16:44 太平洋时间发布（RSS 时间戳 2026-10-01T23:44Z），称 Ultrafast 已在 OpenAI API 上线",
+        "verification": "vendor_engineering_blog_with_openai_quotes",
+        "bullets": [
+            "英伟达 10月1日发布技术说明：GPT-6 Astra 的 Ultrafast 高速模式已在 OpenAI API 上线，并向符合条件的 ChatGPT Work 和 Codex 用户开放，token 生成速度最高是标准模式的 8 倍。",
+            "加速来自 Blackwell 架构上的推理优化；OpenAI 推理负责人称团队用自家模型优化英伟达 GPU 上的推理软件，把模型对 GPU 编程的积累变成高性能内核。",
+            "更快的生成主要改善编程智能体的改代码、测试、调试循环，并缩短工具调用之间的等待；接入方式与价格以 OpenAI 的 Ultrafast 开发者文档为准。",
+        ],
+        "video_bullets": [
+            "GPT-6 Astra 的高速模式上线，token 生成速度最高提到标准模式的八倍，跑在英伟达 Blackwell 显卡上，主要让编程智能体的改代码、测试、调试循环更快。",
+        ],
+        "supporting_sources": [
+            {"name": "OpenAI：Ultrafast guide",
+             "url": "https://developers.openai.com/api/docs/guides/ultrafast-mode"},
+        ],
+    },
+    {
+        "title": "ServiceNow 公开企业智能体数据框架 AutoSynthData",
+        "category": "技术洞察",
+        "nav_label": "ServiceNow",
+        "source_name": "ServiceNow",
+        "source_url": "https://huggingface.co/blog/ServiceNow-AI/autosynthdata",
+        "published": "2026-10-02",
+        "event_date": "2026-10-02",
+        "event_date_evidence": "Hugging Face 博客 ServiceNow-AI 文章标注 Published October 2, 2026",
+        "verification": "vendor_blog_with_reported_experiment_results_no_third_party_replication",
+        "bullets": [
+            "ServiceNow 在 10月2日公开 AutoSynthData 方法，用目标模型失败的任务和更强教师模型的成功轨迹定位能力缺口，再自动生成、校验新的训练任务，形成随模型进步而移动的课程。",
+            "官方在 EnterpriseOps Gym 的 Hybrid 环境里生成 2000 条样本约花 18 小时，微调 Gemma 后平均 Pass@1 提升 7.2 个百分点、相对提升 35%，验证器成功率从 63.01% 升到 68.55%。",
+            "在 ITSM 环境生成 1994 条样本约花 66 小时，以 DeepSeek-V4.1-Flash 为教师时 Pass@1 从 18.77% 提到 27.18%；数据均为厂商自测，尚未见到第三方复现。",
+        ],
+        "video_bullets": [
+            "ServiceNow 公开 AutoSynthData，用模型的失败案例自动生成企业智能体训练任务，再逐条校验。内部测试中微调后任务通过率最高提升 35%，但数据仍是厂商自测。",
+        ],
+    },
+    {
+        "title": "微软发布智能体评测沙箱 ThinkingBox",
+        "category": "技术洞察",
+        "nav_label": "Microsoft",
+        "source_name": "Microsoft",
+        "source_url": "https://huggingface.co/blog/microsoft/thinkingbox",
+        "published": "2026-10-03",
+        "event_date": "2026-10-03",
+        "event_date_evidence": "Hugging Face 博客 microsoft/thinkingbox 标注 Published October 3, 2026，并同步开放仓库与数据集",
+        "verification": "official_blog_and_open_sandbox_dataset",
+        "bullets": [
+            "微软与 Hugging Face 在 10月3日联合发布 ThinkingBox：它让智能体在隔离的 MCP 工具会话里跑任务，再按数据库和底层环境的真实终态打分，而不是看它自己说了什么。",
+            "配套的 ThinkingBox-Bench 含零售、旅行、保险等 507 道企业流程任务，同一任务重复 20 次；论文称 12 个模型的分析里，67.24% 的失败尝试在结束时并没有任何工具报错。",
+            "18 个模型各跑 20 次的结果显示，Kimi-K3 至少解出 476 道题，但 20 次全过的只有 68 道；沙箱与数据集已在 Hugging Face 开放下载。",
+        ],
+        "video_bullets": [
+            "微软发布智能体评测沙箱 ThinkingBox，不看模型说了什么，而是检查它把数据库改成了什么样。507 道企业任务重复二十次，多数失败时竟然没有任何报错。",
+        ],
+        "supporting_sources": [
+            {"name": "GitHub：microsoft/thinkingbox",
+             "url": "https://github.com/microsoft/thinkingbox"},
+        ],
+    },
+    {
+        "title": "DeepSeek Harness 新版本兼容 Claude Code Mods",
+        "category": "开发生态",
+        "nav_label": "DeepSeek",
+        "source_name": "IT之家",
+        "source_url": "https://www.ithome.com/1/009/701.htm",
+        "published": "2026-10-04T12:27:00+08:00",
+        "event_date": "2026-10-04",
+        "event_date_evidence": "IT之家 2026年10月4日报道：DeepSeek Harness v0.2.1-alpha.1 加入 Claude Code Mods 兼容层，作者崔添翼当日回应",
+        "verification": "media_report_with_official_author_statement",
+        "bullets": [
+            "DeepSeek Harness 在 v0.2.1-alpha.1 中加入实验性的 Claude Code Mods 兼容层，作者崔添翼 10月4日回应称，目的是验证 Claude Code Mods 给插件作者的扩展能力是否属于「一切皆插件」架构的子集。",
+            "他明确表示目前还无法让所有 Claude Code Mods 无缝运行，兼容层仍是 alpha 实验功能；官方文档给出 Token Weather、Blast Radius 等桥接示例，内置的 diff、agents-md 等仍标注为不可运行。",
+            "桌面端新版本同时新增插件管理页面，输入 npm 包名即可安装、停用或卸载插件；官方按模型 API 用户口径统计，约 60% 的 DeepSeek Harness 用户使用第三方插件。",
+        ],
+        "video_bullets": [
+            "DeepSeek Harness 新版本加入 Claude Code Mods 兼容层，让为另一套编程工具写的扩展有机会直接运行。作者说这还是实验功能，暂时做不到全部无缝兼容。",
+        ],
+        "supporting_sources": [
+            {"name": "DeepSeek Harness 开发者预览版：一切皆插件",
+             "url": "https://deepseek.com/harness/"},
+        ],
+    },
+    {
+        "title": "Meshy 披露年度经常性收入突破 1 亿美元",
+        "category": "行业动态",
+        "nav_label": "Meshy",
+        "source_name": "量子位",
+        "source_url": "https://www.qbitai.com/2026/10/501451.html",
+        "published": "2026-10-04T08:53:00+08:00",
+        "event_date": "2026-10-04",
+        "event_date_evidence": "量子位 2026年10月4日报道，Meshy 披露 ARR 从 100 万美元增至 1 亿美元用时不到两年；文中基准数据出自 Meshy 自建评测",
+        "verification": "media_report_with_vendor_disclosed_metrics",
+        "bullets": [
+            "3D 生成公司 Meshy 披露，其年度经常性收入从 100 万美元增长到 1 亿美元，用时不到两年，比语音生成公司 ElevenLabs 的约 20 个月和 HeyGen 的 29 个月更快。",
+            "报道用同一张参考图对比通用模型与专用 3D 模型：GPT-6 Astra 擅长把需求拆成几何关系来搭场景，而角色、道具这类资产仍由 Meshy 生成，发丝、褶皱和纹样等细节更完整。",
+            "在 Meshy 自建的几何对齐基准中，Meshy 7 单图输入的表面细节得分 59.8%，高于其他受测模型约 49% 到 55%；官方称 7.1 把几何生成分辨率从 2048 立方提到 4096 立方。",
+        ],
+        "video_bullets": [
+            "3D 生成公司 Meshy 披露年度经常性收入从一百万美元涨到一亿美元，只用了不到两年。它能生成带细节的角色和道具，补上通用大模型做不精的那部分资产。",
+        ],
+    },
+    {
+        "title": "谷歌暂停开源漏洞奖励计划",
+        "category": "行业动态",
+        "nav_label": "Google",
+        "source_name": "IT之家",
+        "source_url": "https://www.ithome.com/1/009/673.htm",
+        "published": "2026-10-04T08:46:00+08:00",
+        "event_date": "2026-10-01",
+        "event_date_evidence": "谷歌宣布自 2026年10月1日起 OSS VRP 不再接收产品漏洞提报（IT之家 2026-10-04 报道，TechCrunch 同日报道）",
+        "verification": "media_report_of_official_policy_change",
+        "bullets": [
+            "谷歌宣布自 10月1日起，开源软件漏洞奖励计划不再接收产品漏洞提报，此前已提交的报告不受影响；涉及谷歌云代码仓库的漏洞仍可通过云漏洞奖励计划提交。",
+            "据报道，谷歌工程师与开源维护者被数以千计声称发现严重漏洞的报告淹没，排查后发现都是 AI 生成的幻觉结果，既无效也无法被利用，挤占了修复真实高危漏洞的时间。",
+            "谷歌表示会重组该计划的机制，计划在 2027 年第一季度公布进展；这项计划原本用于激励独立安全研究者披露谷歌开源生态中的安全缺陷。",
+        ],
+        "video_bullets": [
+            "谷歌暂停了开源软件漏洞奖励计划，从十月一日起不再接收漏洞提报。原因是维护者被数千份 AI 生成的假漏洞报告淹没，排查这些幻觉报告占掉了修真实漏洞的时间。",
+        ],
+        "supporting_sources": [
+            {"name": "TechCrunch：Google froze its open source bug bounty program due to a 'significant rise' in AI submissions",
+             "url": "https://techcrunch.com/2026/10/04/google-froze-its-open-source-bug-bounty-program-due-to-a-significant-rise-in-ai-submissions/"},
+        ],
+    },
+]
+
+briefing = {
+    "date": DATE,
+    "window_days": 5,
+    "edition_start_date": "2026-09-21",
+    "title": f"AI 日报 · {DATE}",
+    "edition_note": (
+        "本期 8 条覆盖 10月1日 到 10月4日：Tavus 发布人类交互模型 Griffin、Anthropic 给 Claude Code 加 mods、"
+        "GPT-6 Astra Ultrafast 高速模式上线、ServiceNow 公开 AutoSynthData、微软发布 ThinkingBox 评测沙箱、"
+        "DeepSeek Harness 兼容 Claude Code Mods、Meshy 年度经常性收入破 1 亿美元、谷歌暂停开源漏洞奖励计划。"
+        "厂商自评与自建基准的数据均在画面要点里注明。"
+    ),
+    "stories": stories,
+}
+
+out = Path(__file__).resolve().parent.parent / "data" / f"briefing-{DATE}-models.json"
+out.write_text(json.dumps(briefing, ensure_ascii=False, indent=1), encoding="utf-8")
+print("wrote", out, "stories:", len(stories))
+for s in stories:
+    print(f"  · {s['nav_label']:12s} {s['title']}  ({len(s['title'])} 字标题, 口播 {len(''.join(s['video_bullets']))} 字)")

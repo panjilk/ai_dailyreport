@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 
 def duration_matches(video_seconds, subtitle_end, tolerance=1.5):
@@ -17,8 +18,12 @@ def exit_code(failures, ocr_skipped):
 
 
 def check_date_text(text, event_date, bullets=()):
-    """检查画面事件日期和要点首次提及的事件日。"""
-    if f'事件日期 {event_date}' not in re.sub(r'\s+', ' ', text):
+    """检查画面事件日期和要点首次提及的事件日。
+
+    OCR 对「事件日期 2026-09-30」这样带空格的行不稳定（常读成「事件日期2026-0」或
+    多插空格），所以比对前把空白全部去掉，只比对字符序列。
+    """
+    if f'事件日期{event_date}' not in re.sub(r'\s+', '', text):
         return False, f'画面缺少事件日期 {event_date}'
     first = re.search(r'(\d{1,2})月(\d{1,2})日', ' '.join(bullets))
     if first:
@@ -35,6 +40,27 @@ def parse_srt(content):
         raise ValueError('字幕没有可识别的时间码')
     h, m, s, ms = map(int, matches[-1][4:])
     return len(matches), h * 3600 + m * 60 + s + ms / 1000
+
+
+# 多尺度 OCR：右上角事件日期是小字，不同缩放下识别结果互补，任一命中即可。
+OCR_SCALES = (
+    (None, ()),
+    ('scale=iw*2:ih*2:flags=lanczos', ()),
+    ('scale=iw*3:ih*3:flags=lanczos', ('--psm', '6')),
+)
+
+
+def ocr_candidates(image_path, scratch):
+    """按多种缩放对同一帧 OCR，返回各次识别文本。"""
+    texts = []
+    for index, (filters, extra) in enumerate(OCR_SCALES):
+        target = image_path
+        if filters:
+            target = scratch / f'{image_path.stem}-s{index}.png'
+            run_command(['ffmpeg', '-v', 'error', '-i', str(image_path), '-vf', filters, '-y', str(target)])
+        text, _ = run_command(['tesseract', str(target), 'stdout', '-l', 'chi_sim+eng', *extra])
+        texts.append(text)
+    return texts
 
 
 def required_files(directory):
@@ -57,6 +83,7 @@ def run_command(args):
 
 def verify(directory):
     failures = []
+    scratch = Path(tempfile.mkdtemp(prefix='verify-video-'))
     def report(label, ok, reason=''):
         print(f'{label}：{"通过" if ok else "失败" + ("：" + reason if reason else "")}')
         if not ok:
@@ -125,8 +152,12 @@ def verify(directory):
                 continue
             try:
                 # 同一新闻各帧有相同的事件日期栏；首张口播帧即可校验。
-                text, _ = run_command(['tesseract', str(scene_frames[0]), 'stdout', '-l', 'chi_sim+eng'])
-                ok, reason = check_date_text(text, story['event_date'], story.get('bullets', []))
+                # 右上角日期是小字，单一缩放会读残，所以按多种缩放各 OCR 一次，任一命中即通过。
+                ok, reason = False, '画面缺少事件日期 ' + story['event_date']
+                for text in ocr_candidates(scene_frames[0], scratch):
+                    ok, reason = check_date_text(text, story['event_date'], story.get('bullets', []))
+                    if ok:
+                        break
                 report(f'第 {index} 条画面日期', ok, reason)
             except (OSError, RuntimeError, KeyError) as exc:
                 report(f'第 {index} 条画面日期', False, str(exc))

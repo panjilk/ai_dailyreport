@@ -1,0 +1,180 @@
+{
+ "date": "2026-10-04",
+ "window_days": 5,
+ "edition_start_date": "2026-09-21",
+ "title": "AI 日报 · 2026-10-04",
+ "edition_note": "本期 9 条覆盖 10月1日 到 10月3日：Aleph Alpha 开源 780 亿参数主权模型 Kolibri、英伟达开源表格基础模型 Kumo Tabular、Ai2 开源科研报告模型 AstaBrief 8B、Cloudflare 开源决策模型 Clef、MBZUAI 开源全模态嵌入模型 Omni-Embed-Mini、Meta 开源 Muse 硬件套件、Google Antigravity 接入 Claude Opus 5.5、OpenAI 发布 GPT-6 系列选型指南、arXiv 新规限制每人每月投稿 2 篇。厂商自评数据与媒体转述的限制均在画面要点注明。",
+ "stories": [
+  {
+   "title": "Aleph Alpha 开源 78B 主权模型 Kolibri",
+   "category": "模型发布",
+   "nav_label": "Aleph Alpha",
+   "source_name": "Aleph Alpha",
+   "source_url": "https://aleph-alpha.com/en/blog/kolibri-has-landed-a-sovereign-open-weight-model/",
+   "published": "2026-10-03T00:00:00+02:00",
+   "event_date": "2026-10-03",
+   "event_date_evidence": "Aleph Alpha 官方博客 2026年10月3日（德国统一日）发布 Kolibri 公告",
+   "verification": "official_announcement_with_tech_report_no_independent_benchmark",
+   "bullets": [
+    "德国 AI 公司 Aleph Alpha 在 10月3日德国统一日发布 Kolibri 模型，总参数 780 亿，采用混合专家架构，每个 token 只激活约 30 亿参数。",
+    "它支持最长 100 万 token 的上下文，主打德英双语，面向公共管理、工业和航空航天等受监管行业，可在企业内部本地部署。",
+    "完整权重已上传 Hugging Face 并以 Apache 2.0 许可开放商用；官方称其由自建训练流水线迭代而来，能力数据以厂商技术报告为准。"
+   ],
+   "video_bullets": [
+    "德国公司 Aleph Alpha 发布 Kolibri 大模型，780 亿参数、每次只激活 30 亿，权重以 Apache 2.0 开放，主打政府和受监管行业的本地部署。"
+   ]
+  },
+  {
+   "title": "英伟达开源表格基础模型 Kumo Tabular",
+   "category": "模型发布",
+   "nav_label": "NVIDIA",
+   "source_name": "NVIDIA",
+   "source_url": "https://huggingface.co/blog/nvidia/kumo-tabular",
+   "published": "2026-10-02T00:00:00-07:00",
+   "event_date": "2026-10-02",
+   "event_date_evidence": "NVIDIA 官方 Hugging Face 博客 2026年10月2日发布 Kumo Tabular 公告",
+   "verification": "official_announcement_vendor_self_reported_benchmarks",
+   "bullets": [
+    "英伟达在 10月2日发布开源表格基础模型 Kumo Tabular，用类似大模型上下文学习的方式直接预测表格里的空白值。",
+    "它提供 2800 万到 2.15 亿参数三个版本，读入带答案的表格后即可对分类和回归任务直接预测，无需另外训练、调参或做特征工程。",
+    "模型以 OpenMDW-1.1 许可开放商用，官方称在 TabArena 等四个基准上排名第一，训练只用了合成表格，后续会公开训练方法和合成数据生成器。"
+   ],
+   "video_bullets": [
+    "英伟达发布开源表格基础模型 Kumo Tabular，把大模型的上下文学习用在表格上，直接预测空白值，不用重新训练或做特征工程，三个版本都开放商用。"
+   ]
+  },
+  {
+   "title": "Ai2 开源科研报告模型 AstaBrief 8B",
+   "category": "模型发布",
+   "nav_label": "Ai2",
+   "source_name": "Hugging Face Blog",
+   "source_url": "https://huggingface.co/blog/allenai/astabrief",
+   "published": "2026-10-02T00:00:00-07:00",
+   "event_date": "2026-10-02",
+   "event_date_evidence": "Ai2（艾伦人工智能研究院）官方 Hugging Face 博客 2026年10月2日发布 AstaBrief",
+   "verification": "official_announcement_open_model_and_data",
+   "bullets": [
+    "艾伦人工智能研究院 Ai2 在 10月2日开源 AstaBrief 8B，一个专门把研究问题和文献片段写成带引用报告的模型。",
+    "它会一次成稿而不是分段写，已经在 Ai2 科研平台 Asta 里作为快速模式上线，与 Claude 驱动的思考模式并存。",
+    "限制是它只做引用式综述、每条结论都要靠检索到的文献支撑；官方称其质量接近此前使用的闭源模型，模型权重和训练数据也已一并开放。"
+   ],
+   "video_bullets": [
+    "艾伦研究院开源 AstaBrief 8B，能把研究问题和文献片段写成带引用的报告，一次成稿，已在科研平台 Asta 里当快速模式上线，权重和训练数据都开放。"
+   ]
+  },
+  {
+   "title": "Cloudflare 开源决策模型 Clef 与 Clef-flash",
+   "category": "模型发布",
+   "nav_label": "Cloudflare",
+   "source_name": "Cloudflare",
+   "source_url": "https://www.cloudflare.com/resource/clef-rl-interest/",
+   "published": "2026-10-01T00:00:00-07:00",
+   "event_date": "2026-10-01",
+   "event_date_evidence": "Cloudflare 官方页面与 the-decoder 报道显示 Clef 两款决策模型于 2026年10月1日发布",
+   "verification": "official_announcement_media_report",
+   "bullets": [
+    "Cloudflare 在 10月1日上线两款开源决策模型 Clef 和 Clef-flash，基于 Qwen 构建，支持文本和图片输入。",
+    "和生成文字的大模型不同，它们给预设选项打概率分并返回带置信度的结构化结果，下游系统可以直接据此分类、分流和执行动作。",
+    "两款模型已接入 Cloudflare 的 Workers AI，官方称用户可用自己的数据通过新的强化学习平台微调，对标此前的 Jev，无需人工始终留在回路里。"
+   ],
+   "video_bullets": [
+    "Cloudflare 发布开源决策模型 Clef 和 Clef-flash，不给文字、只给带置信度的选项概率，让智能体直接判断和执行，已接入它的 Workers AI，还能用自有数据微调。"
+   ]
+  },
+  {
+   "title": "MBZUAI 开源全模态嵌入模型 Omni-Embed-Mini",
+   "category": "技术洞察",
+   "nav_label": "MBZUAI",
+   "source_name": "arXiv",
+   "source_url": "https://arxiv.org/abs/2610.02148",
+   "published": "2026-10-01T00:00:00-04:00",
+   "event_date": "2026-10-01",
+   "event_date_evidence": "arXiv 论文 2610.02148（2026年10月1日提交），作者单位为 MBZUAI，权重已上传 Hugging Face",
+   "verification": "peer_review_pending_arxiv_preprint_authors_self_reported",
+   "bullets": [
+    "阿联酋穆罕默德·本·扎耶德人工智能大学 MBZUAI 在 10月1日发布 Omni-Embed-Mini，把文本、语音、图像、视频和文档映射到同一向量空间。",
+    "0.9B 版本在扩展模态时保持文本侧权重逐位不变，因此不会像常见全模态模型那样拉低文本检索效果，在 MTEB-v2 上取得 49.57 的 nDCG@10。",
+    "官方称它比同类开源全模态嵌入模型小 2.7 到 9.5 倍，2.3B 版本在全模态平均分上略胜闭源的 gemini-embedding-2，模型和评测代码均已开放。"
+   ],
+   "video_bullets": [
+    "阿联酋 MBZUAI 开源全模态嵌入模型 Omni-Embed-Mini，把文字、语音、图像和视频放进同一个向量空间，加模态也不会拉低文本检索，体积还比同类小好几倍。"
+   ]
+  },
+  {
+   "title": "Meta 开源 Muse 硬件套件并送 Home Link",
+   "category": "开发生态",
+   "nav_label": "Meta",
+   "source_name": "TechCrunch",
+   "source_url": "https://techcrunch.com/2026/10/02/meta-wants-you-to-build-your-own-muse-gadget/",
+   "published": "2026-10-02T00:00:00-07:00",
+   "event_date": "2026-10-02",
+   "event_date_evidence": "Meta 产品负责人 Nat Friedman 10月2日在 X 宣布开源 Muse Gadgets，TechCrunch 同日报道",
+   "verification": "company_announcement_media_report",
+   "bullets": [
+    "Meta 在 10月2日开源了让硬件接入其智能体 Muse 的开发套件，包含 ESP32 固件和一套 Linux SDK，以 Apache 2.0 许可放在 GitHub 上。",
+    "开发者可以用它把 Muse 接入自制的设备，或装到树莓派、ESP32 板上；同期推出的 Muse Home Link 是一个 USB-C 小盒子，能让 Muse 连上家里的音箱和智能电视。",
+    "限制是接入需要申请 API 令牌，Home Link 首批只做了 5000 台、面向 Muse 订阅用户免费发放，官方称数周内发货。"
+   ],
+   "video_bullets": [
+    "Meta 开源了 Muse 的硬件开发套件，开发者能用 ESP32 固件和 Linux 套件把 Muse 装进自己做的小设备，还推出一款 USB 盒子，让 Muse 连上家里的音箱和电视。"
+   ]
+  },
+  {
+   "title": "Google Antigravity 接入 Claude Opus 5.5",
+   "category": "开发生态",
+   "nav_label": "Google",
+   "source_name": "Google Antigravity 文档",
+   "source_url": "https://antigravity.google/docs/models/",
+   "published": "2026-10-03T00:00:00-04:00",
+   "event_date": "2026-10-03",
+   "event_date_evidence": "Google Antigravity 官方模型文档 2026年10月3日列出 Claude Opus 5.5 / Sonnet 5.5，媒体同日报道",
+   "verification": "official_docs_change_media_report",
+   "bullets": [
+    "Google 的编程工具 Antigravity 更新模型列表，在 10月3日加入 Anthropic 的 Claude Opus 5.5 和 Sonnet 5.5，两款都是思考模式。",
+    "它们只对 Google AI Pro 和 Ultra 订阅用户开放，免费版、AI Plus 和企业版暂时看不到，Google 还计划在 11月2日下线 Claude 4.6 和 GPT-OSS-120b。",
+    "限制是名单只覆盖部分付费档，且 Antigravity 自家的 Gemini 4 Argon 当时并未列在该页面，实际可用型号需以账号档位为准。"
+   ],
+   "video_bullets": [
+    "Google 的编程工具 Antigravity 新接入 Claude Opus 5.5 和 Sonnet 5.5，只对 Pro 和 Ultra 订阅用户开放，免费版还用不到。"
+   ]
+  },
+  {
+   "title": "OpenAI 发布 GPT-6 系列选型指南",
+   "category": "开发生态",
+   "nav_label": "OpenAI",
+   "source_name": "OpenAI",
+   "source_url": "https://openai.com/index/practical-guide-building-gpt-6",
+   "published": "2026-10-02T00:00:00-07:00",
+   "event_date": "2026-10-02",
+   "event_date_evidence": "OpenAI 官方页面标注 October 2, 2026 发布 GPT-6 系列实战指南",
+   "verification": "official_developer_guide_no_independent_benchmark",
+   "bullets": [
+    "OpenAI 在 10月2日发布一份 GPT-6 系列的实战指南，讲开发者怎么按任务挑模型、控制成本和准备上线。",
+    "指南建议用提示缓存和上下文压缩管住长任务的上下文与花费，并给出用引导、异步工具和多智能体委派维持长流程的方法。",
+    "限制是内容为官方经验建议、不含独立评测；模型选择要结合能力、价格和延迟权衡，具体价格与可用性以 API 文档为准。"
+   ],
+   "video_bullets": [
+    "OpenAI 发布 GPT-6 系列的实战指南，教开发者按任务挑模型，用缓存和上下文压缩控制成本，还给长任务配了引导和多智能体委派的用法。"
+   ]
+  },
+  {
+   "title": "arXiv 新规限制每人每月投稿 2 篇",
+   "category": "行业动态",
+   "nav_label": "arXiv",
+   "source_name": "arXiv",
+   "source_url": "https://blog.arxiv.org/2026/10/01/updated-rate-limit-policy/",
+   "published": "2026-10-01T00:00:00-04:00",
+   "event_date": "2026-10-01",
+   "event_date_evidence": "arXiv 官方博客 2026年10月1日发布新投稿限额政策，10月1日起执行",
+   "verification": "official_policy_announcement",
+   "bullets": [
+    "arXiv 从 10月1日起执行新限额，每个投稿人每个自然月最多提交 2 篇论文，所有学科一视同仁。",
+    "限额按提交次数计算，论文被拒也会占用当月额度；同时保留任何时候最多 3 篇处于评审状态的旧规则，且额度在全部分类之间共用。",
+    "arXiv 把原因指向 AI 带来的投稿爆炸：2026年9月收到 40363 篇投稿，是 2016年同期的四倍多，其中 cs.AI 分类两年增长超过六倍。"
+   ],
+   "video_bullets": [
+    "arXiv 开始限流，每人每月最多投两篇论文，被拒也算一次额度，所有学科都一样，原因是 AI 让投稿量爆炸，单月已经超过四万篇。"
+   ]
+  }
+ ]
+}

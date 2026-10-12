@@ -1,0 +1,225 @@
+{
+ "date": "2026-10-09",
+ "window_days": 5,
+ "edition_start_date": "2026-09-21",
+ "title": "AI 日报 · 2026-10-09",
+ "edition_note": "本期 8 条覆盖 10月7日至10月9日：谷歌一条线有三个动作——企业级 Gemini 智能体、离线优先的 AI 记事应用 AI Edge Foresight、提示词造游戏的 Playground；接着是亚马逊 Alexa Tablet 接替 Fire 平板、阶跃终端大模型原生智能体手机 STEPX Neo 定档；开发侧是 Goodfire 的低成本智能体监控；最后是 Anthropic 更新使用政策与评测平台 Arena 的 B 轮融资。厂商自评成绩与自家基准均在画面要点里注明，未标注的即为第三方或官方口径。",
+ "stories": [
+  {
+   "title": "谷歌云发布 Gemini Agent，定位通用工作智能体",
+   "category": "产品应用",
+   "nav_label": "Google",
+   "source_name": "IT之家",
+   "source_url": "https://www.ithome.com/1/010/706.htm",
+   "published": "2026-10-08",
+   "event_date": "2026-10-08",
+   "event_date_evidence": "IT之家 10月8日（北京时间）报道谷歌云在 Gemini at Work 2026 发布会上推出 Gemini 智能体；财联社与新浪财经 10月8日同日报道；TechCrunch 10月8日《Google brings agentic AI to Gemini, starting with businesses》",
+   "verification": "media_report_of_vendor_announcement",
+   "bullets": [
+    "谷歌云在10月8日的 Gemini at Work 2026 发布会上推出面向企业客户的 Gemini 智能体，把它定位成能处理多种工作的通用工作智能体。",
+    "用户只要给出目标、不用写具体步骤，它就能在单一界面里完成问答、知识工作、内容创作，以及代码的编写和运行，并调用企业内部工具。",
+    "Gemini 智能体支持 Gemini Enterprise、Google Workspace 和第三方服务，当前处于私人预览阶段，谷歌称会先向符合条件的 Workspace 客户开放。"
+   ],
+   "video_bullets": [
+    "谷歌云发布 Gemini 智能体，定位通用工作智能体。用户只要说出目标，它就能自主完成问答、写文档和写代码，目前处于私人预览。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "TechCrunch: Google brings agentic AI to Gemini, starting with businesses",
+     "url": "https://techcrunch.com/2026/10/08/google-brings-agentic-ai-to-gemini-starting-with-businesses/"
+    },
+    {
+     "name": "Google Cloud: Gemini Enterprise 智能体",
+     "url": "https://cloud.google.com/gemini-enterprise/agents"
+    }
+   ]
+  },
+  {
+   "title": "谷歌推出离线 AI 记事应用 AI Edge Foresight",
+   "category": "产品应用",
+   "nav_label": "Google",
+   "source_name": "TechCrunch",
+   "source_url": "https://techcrunch.com/2026/10/08/google-releases-a-new-local-first-granola-competitor/",
+   "published": "2026-10-08",
+   "event_date": "2026-10-08",
+   "event_date_evidence": "TechCrunch 10月8日《Google releases a new local-first Granola competitor》；谷歌开发者页 developers.google.com/edge/foresight 上线，官方说明面向 Apple 芯片 Mac、可完全离线",
+   "verification": "official_announcement_with_media_confirmation",
+   "bullets": [
+    "谷歌在10月8日发布 Mac 应用 AI Edge Foresight，它完全在本机运行、可离线使用，用 7.4 亿参数的 EmbeddingGemma 2 模型记录并整理会议内容。",
+    "它采用左右分屏，一边手写速记、一边自动生成会议纪要，还能查看完整转写、用基于 Gemma 4 的助手提问，支持 Meet、Zoom 和面对面会议。",
+    "用户可以上传 PDF、Google 文档、Office 文件、Markdown 和网页书签建立知识库，会议中相关数据被提到时会实时回答，会议音频不出本机。"
+   ],
+   "video_bullets": [
+    "谷歌发布 Mac 应用 AI Edge Foresight，可以完全离线记录和整理会议内容，音频不出本机，还能用本地模型回答提问。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "Google for Developers: AI Edge Foresight",
+     "url": "https://developers.google.com/edge/foresight"
+    },
+    {
+     "name": "TechResearchOnline: Google AI Edge Foresight Brings Offline Meeting Notes to Mac",
+     "url": "https://techresearchonline.com/news/google-ai-edge-foresight-offline-meeting-notes"
+    }
+   ]
+  },
+  {
+   "title": "谷歌上线 AI 游戏平台 Playground，打字造游戏",
+   "category": "产品应用",
+   "nav_label": "Google",
+   "source_name": "The Verge",
+   "source_url": "https://www.theverge.com/tech/1006477/google-playground-unity-spark-ai",
+   "published": "2026-10-07",
+   "event_date": "2026-10-07",
+   "event_date_evidence": "The Verge 10月7日《Google now lets you make games with AI》；谷歌官方博客《Create custom games without coding on Playground》与 labs.google/playground 同日上线；TechCrunch 10月7日同日报道",
+   "verification": "official_announcement_with_media_confirmation",
+   "bullets": [
+    "谷歌在10月7日上线实验性游戏平台 Playground，用打字的方式就能生成可玩的浏览器游戏、不用写代码，平台由 Gemini、Nano Banana 和 Lyria 等模型驱动。",
+    "用户可以先选问答、塔防、竞速等品类或从零开始，再通过对话调整物理规则、角色和环境；做好的游戏可私密保存、分享链接，或发布到 Explore 画廊。",
+    "Playground 先在美国向 18 岁以上用户开放，免费使用，Google One 订阅者有更高的每周额度；谷歌还预告将接入 Unity Spark，带来更专业的 3D 玩法。"
+   ],
+   "video_bullets": [
+    "谷歌上线实验性游戏平台 Playground，打字说想法就能生成能玩的游戏，不用写代码。它由 Gemini 等模型驱动，先在美国向成年人开放。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "Google Blog: Create custom games without coding on Playground",
+     "url": "https://blog.google/innovation-and-ai/technology/ai/playground-experimental-gaming-platform/"
+    },
+    {
+     "name": "TechCrunch: Google experiments with an AI-powered gaming platform",
+     "url": "https://techcrunch.com/2026/10/07/google-experiments-with-an-ai-powered-gaming-platform/"
+    }
+   ]
+  },
+  {
+   "title": "亚马逊发布 Alexa Tablet，接替 Fire 平板",
+   "category": "产品应用",
+   "nav_label": "Amazon",
+   "source_name": "IT之家",
+   "source_url": "https://www.ithome.com/1/010/715.htm",
+   "published": "2026-10-08",
+   "event_date": "2026-10-08",
+   "event_date_evidence": "IT之家 10月8日（北京时间）报道亚马逊发布 Alexa Tablet；路透社 10月8日《Amazon launches first Android tablets, raising prices and incorporating Alexa》；亚马逊开发者文档 Alexa Tablet 设备规格 10月8日更新",
+   "verification": "media_report_of_vendor_announcement",
+   "bullets": [
+    "亚马逊在10月8日发布全新 Alexa 品牌平板，首批有 Alexa Tablet 12 Pro、11 和 8 三款，都采用铝合金一体机身、内置 Alexa+ 人工智能助手，接替 Fire 平板。",
+    "新平板改用完整的安卓系统和 Google Play 商店，同时提高售价、放弃过去接近成本价卖硬件的路线；亚马逊表示新机速度和性能都有提升，外观也重新设计。",
+    "面向儿童的新品同步更新，也换成了完整安卓；这标志着亚马逊平板产品线从主打低价转向强调 AI 能力，和苹果 iPad 正面竞争。"
+   ],
+   "video_bullets": [
+    "亚马逊发布 Alexa Tablet 平板，首批三款都内置 Alexa+ 助手，接替原来的 Fire 系列，改用完整安卓系统，售价也更高。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "Reuters: Amazon launches first Android tablets, raising prices and incorporating Alexa",
+     "url": "https://www.mercedsunstar.com/news/business/article317539170.html"
+    }
+   ]
+  },
+  {
+   "title": "阶跃星辰智能体手机 STEPX Neo 定档 10月13日",
+   "category": "产品应用",
+   "nav_label": "阶跃星辰",
+   "source_name": "新浪科技",
+   "source_url": "https://finance.sina.com.cn/tech/mobile/n/n/2026-10-08/doc-iniunmim4467070.shtml",
+   "published": "2026-10-08",
+   "event_date": "2026-10-08",
+   "event_date_evidence": "新浪数码 10月8日上午报道阶跃终端宣布 10月13日在上海举办 Ready Builder One 发布会；站长之家（chinaz）同日报道，称其搭载智能体原生操作系统 Step AOS",
+   "verification": "media_report_of_vendor_announcement",
+   "bullets": [
+    "阶跃终端在10月8日宣布，将在10月13日于上海举办主题为 Ready Builder One 的发布会，推出旗下首款大模型原生智能体手机 STEPX Neo。",
+    "它搭载智能体原生操作系统 Step AOS，官方把它定位成“大模型原生”的设备，智能体成为系统底层能力，而不是装在手机上的一个应用。",
+    "发布会定在10月13日 19 点，届时公布产品细节、售价和上市时间；这是阶跃在基座模型和端侧智能体之外，第一次推出自有品牌手机。"
+   ],
+   "video_bullets": [
+    "阶跃终端宣布首款大模型原生智能体手机 STEPX Neo 将于 10月13日发布，它搭载智能体原生系统，把智能体做成手机底层能力。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "站长之家：阶跃大模型原生智能体手机 STEPX Neo 官宣 10月13日发布",
+     "url": "https://www.chinaz.com/feed/1008/1780648.shtml"
+    }
+   ]
+  },
+  {
+   "title": "Goodfire 推出低成本 AI 代理监控方案",
+   "category": "开发生态",
+   "nav_label": "Goodfire",
+   "source_name": "TechCrunch",
+   "source_url": "https://techcrunch.com/2026/10/08/goodfire-says-its-new-inside-out-monitors-catch-rogue-ai-agents-at-a-fraction-of-the-cost/",
+   "published": "2026-10-08",
+   "event_date": "2026-10-08",
+   "event_date_evidence": "TechCrunch 10月8日《Goodfire says its new 'inside-out' monitors catch rogue AI agents at a fraction of the cost》；webpronews 10月8日同日报道并给出成本对比",
+   "verification": "media_report_of_vendor_product",
+   "bullets": [
+    "旧金山的 Goodfire 在10月8日发布一类新的监控器，它不靠再请一个 AI 去读代理的全部操作，而是直接读取模型内部的激活状态，发现异常时再调用更强的模型复核。",
+    "官方给出的成本对比是：监控开源模型 Kimi K3 上约 1500 个会话，用它的方案约 51 美元，换成较便宜的外部 AI 检查器要约 233 美元，用前沿模型则接近 1 万美元。",
+    "这类“由内向外”的监控想解决的是智能体自主运行时难以察觉的越界行为，Goodfire 称它能在不显著增加延迟和成本的前提下把可疑动作筛出来交给人工判断。"
+   ],
+   "video_bullets": [
+    "旧金山公司 Goodfire 推出新的 AI 代理监控方案，直接读取模型内部状态抓异常，不用再请一个 AI 通读全部操作，成本只要几十美元。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "WebProNews: Goodfire's Internal Probes Offer Cheap Guardrails Against Rogue AI Agents",
+     "url": "https://webpronews.com/goodfires-internal-probes-offer-cheap-guardrails-against-rogue-ai-agents"
+    }
+   ]
+  },
+  {
+   "title": "Anthropic 更新使用政策，收紧滥用与选举规则",
+   "category": "行业动态",
+   "nav_label": "Anthropic",
+   "source_name": "Anthropic",
+   "source_url": "https://www.anthropic.com/news/2026-usage-policy-update",
+   "published": "2026-10-08",
+   "event_date": "2026-10-08",
+   "event_date_evidence": "Anthropic 官方 10月8日发布《Our updated Usage Policy》(anthropic.com/news/2026-usage-policy-update)，新政策 11月12日生效；TechCrunch、The Verge、MacRumors 10月8日同日报道",
+   "verification": "official_announcement_with_media_confirmation",
+   "bullets": [
+    "Anthropic 在10月8日更新使用政策，新增禁止“持续且无端地对模型施以虐待或残忍行为”的条款，这是它一年多来首次修改政策，新规 11月12日生效。",
+    "官方解释这条只针对极端情况，不适用于普通的挫败、批评、黑暗题材创作和模型测试；目前的主要执行方式是让 Claude 直接结束这段对话。",
+    "政策还把选举欺骗、用假账号和假新闻站影响舆论、为武器或无人机编写软件、未经同意追踪他人等条款集中列为禁止，并要求 Claude 连接可能伤人的硬件时必须有合格人员在场、随时叫停。"
+   ],
+   "video_bullets": [
+    "Anthropic 更新使用政策，明确禁止持续无端虐待模型，也把选举欺骗、假账号造势、武器软件和未经同意追踪列入禁止，新规十一月十二日生效。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "TechCrunch: Anthropic changes usage policy to ban model abuse and election interference",
+     "url": "https://techcrunch.com/2026/10/08/anthropic-changes-usage-policy-to-ban-model-abuse-and-election-interference"
+    },
+    {
+     "name": "MacRumors: Anthropic Says Users Can't Be Needlessly Cruel to Claude",
+     "url": "https://www.macrumors.com/2026/10/08/anthropic-user-guideline-update/"
+    }
+   ]
+  },
+  {
+   "title": "AI 评测平台 Arena 完成 2 亿美元 B 轮融资",
+   "category": "行业动态",
+   "nav_label": "Arena",
+   "source_name": "TechCrunch",
+   "source_url": "https://techcrunch.com/2026/10/08/popular-ai-leaderboard-arena-nearly-doubles-valuation-to-3-1b-valuation-in-10-months/",
+   "published": "2026-10-08",
+   "event_date": "2026-10-08",
+   "event_date_evidence": "TechCrunch 10月8日《Popular AI leaderboard Arena nearly doubles valuation to $3.1B valuation in 10 months》；彭博社 10月8日同日报道公司当日宣布完成 B 轮",
+   "verification": "media_report_of_vendor_fundraise",
+   "bullets": [
+    "做 AI 模型排行榜的 Arena 在10月8日宣布完成 2 亿美元 B 轮融资，估值 31 亿美元，比 10 个月前的上一轮接近翻倍，本轮由 Lightspeed 和 Khosla Ventures 领投。",
+    "Salesforce Ventures、戴尔科技资本、a16z、Felicis 等也参与投资；Arena 源自 2023 年加州大学伯克利分校的 Chatbot Arena 众包评测项目。",
+    "它的商业模式是把社区投票结果做成 AI 评测服务，卖给模型公司和企业的性能分析；公司称今年 6 月的年化收入已达 1 亿美元，而 1 月完成 A 轮时只有 3000 万美元。"
+   ],
+   "video_bullets": [
+    "做 AI 模型排行榜的 Arena 完成两亿美元 B 轮融资，估值三十一亿美元。它把社区投票做成评测服务，年化收入已做到一亿美元。"
+   ],
+   "supporting_sources": [
+    {
+     "name": "Bloomberg: AI Model Evaluator Arena Valued at Over $3 Billion in Round",
+     "url": "https://www.bloomberg.com/news/articles/2026-10-08/ai-model-evaluator-arena-valued-at-over-3-billion-in-round"
+    }
+   ]
+  }
+ ]
+}
