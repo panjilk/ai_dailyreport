@@ -7,3 +7,11 @@ data/broadcast_log.json
 data/source_health.json
 .pytest_tmp/
 data/translation_cache.json
+.pytest_tmp_*/
+outputs/
+dist/*.zip
+dist/*.zip.sha256
+*.partial.mp4
+.env
+.env.*
+!.env.example

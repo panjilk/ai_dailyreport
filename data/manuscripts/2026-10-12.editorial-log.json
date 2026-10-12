@@ -1,0 +1,44 @@
+{
+  "edition_date": "2026-10-12",
+  "artifact": "2026-10-12.md",
+  "requested_format": "Chinese manuscript only; no video or audio",
+  "window_start": "2026-10-08T00:00:00+08:00",
+  "verified_through": "2026-10-12T15:12:00+08:00",
+  "collection_mode": "Project model-focused manuscript, using tech-news-digest as collector only",
+  "raw_collection": "Local-only: outputs/2026-10-12-editorial-draft/tech-news-digest (not included in this commit)",
+  "collection_status": {
+    "rss": "5 sources succeeded; 13 raw items",
+    "github": "5 sources succeeded; 9 raw items",
+    "twitter": "8 of 10 sources succeeded; 29 raw items; GoogleDeepMind and demishassabis rate-limited",
+    "web_search": "2 configured topics succeeded; 56 raw search results",
+    "automatic_native_summary": "MyMemory translation returned HTTP 429; no automatically qualified stories. Final manuscript independently written in Chinese from original sources."
+  },
+  "selection": {
+    "published_items": 10,
+    "policy": "Concrete foundation-model or associated product/API changes first; no filler; original dates distinguished from document updates and future effective dates.",
+    "social_poll": "Tibo item is opinion solicitation, not an implemented subscription change. Poll options and final result verified from original_post.card.binding_values in raw/twitter.json.",
+    "excluded": [
+      "DeepSeek and GLM: no qualified in-window model update established; this does not assert absence of all news.",
+      "Older Gemini and Mistral model announcements: outside the five-day reporting window.",
+      "Vague commentary, duplicate reposts, unverified snippets and routine SDK patches: not selected."
+    ]
+  },
+  "security_check": {
+    "status": "Limited model/developer scope checked; not a comprehensive security digest",
+    "routes": [
+      "Original candidate sources collected with RSS/X/web pipeline",
+      "Primary-domain search for OpenAI/Anthropic/Google Cloud security incident, data breach and prompt injection in October 2026",
+      "GitHub Advisory Database search for LangChain/vLLM/Transformers October 2026",
+      "Pre-delivery primary advisory recheck: GHSA-2823-qmq8-rwvj and GHSA-2phq-3phc-84px; published September 23 and updated October 5, outside the window"
+    ],
+    "decision": "Located vLLM and related dependency advisory results mostly dated October 5–7, outside the current reporting window; no qualified urgent in-window model-related alert established by these checks. Crypto alert accounts are outside this project's model-news profile; no claim of a clean comprehensive security window."
+  },
+  "review": {
+    "openai_anthropic": "Independent fact/date review completed; rollout restrictions, beta access, official performance attribution, future deadlines and poll-versus-policy boundaries retained.",
+    "chinese_models": "Qwen and MiMo independently reviewed; MiMo default completion length clarified as applicable when the request omits the parameter after automatic routing.",
+    "gemini": "Enterprise agent and API replacement/deprecation facts independently reviewed against official sources.",
+    "checks": "PASS: 10 consecutive numbered news items; 16 distinct HTTP(S) original/supporting URLs; 3381 manuscript-body characters excluding URL targets; future deadlines and poll-versus-policy boundaries retained; no video or audio files in output.",
+    "video_generated": false,
+    "audio_generated": false
+  }
+}

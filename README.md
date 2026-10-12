@@ -4,6 +4,8 @@
 
 **不含定时任务。** 每次手动运行生成一期，不自动上传或发布。
 
+已接入 [tech-news-digest](https://github.com/draco-agent/tech-news-digest) 作为补充采集管线，默认运行时会同时使用原项目来源和经过筛选的大模型来源。技能代码固定版本保存在 `vendor/tech-news-digest/`，大模型配置保存在 `config/tech-news-digest/`，迁移或打包时必须一起带走。使用与接口配置见 [接入说明](docs/tech-news-digest.md)。
+
 ## 已生成的成片
 
 **最新扩充版**：`outputs/2026-09-23_134603_612385/index.html`，约1分41秒；收录近5天内的7条具体消息，按大模型相关性优先播放，配音不在中英文名称交界处人为停顿。
@@ -77,6 +79,7 @@
 **选题优先级**：OpenAI/GPT、Claude、GLM、DeepSeek、Qwen 等具名大模型的发布、能力、产品和用量消息优先入选并靠前播放；仅把模型作为比较对象的报道不算该模型的更新。模型消息内部先排版本发布与能力升级，再排其他动态；同档按发布时间从新到旧。之后才播放其他 AI 新闻。这里的“热门”是基于新闻类型的编辑规则，不是网站浏览量。每条仍需符合近 5 个自然日时效、有来源及事件日期证据；政策通过、监管公告和额度重置等按各自实际发生日期核实。
 
 - 默认启用 **IT之家 RSS、量子位 RSS、雷峰网 RSS、极客公园 RSS、Hugging Face 论文 API、arXiv cs.CL RSS、Transformers GitHub Releases API**，以及 OpenAI News、Google DeepMind、Hugging Face Blog、NVIDIA Blog 四个官方英文 RSS 和 TechCrunch AI。以上来源参考 [ai-daily-skill](https://github.com/geekjourneyx/ai-daily-skill)、[CloudFlare-AI-Insight-Daily](https://github.com/justlovemaki/CloudFlare-AI-Insight-Daily) 与 [ai-daily-briefing](https://github.com/Rion-Wu-tech/ai-daily-briefing) 的数据源设计，并在本项目中按 5 天窗口重新验证日期。官方英文 RSS 标记为 `official_article`，摘要明确注明发布方自述、尚未独立复核。
+- tech-news-digest 增加 Google AI、Gemini、Google Research、The Decoder、Interconnects 五个已验证 RSS，以及 OpenAI、Anthropic、Gemini SDK 和模型推理框架的 GitHub 线索；只启用大模型及相关产品主题，不启用加密货币、泛科技、Reddit或项目热榜。补充 RSS 必须回到文章正文，重新执行主题、事件日期、具体性和中文摘要检查。Anthropic 原 RSS 实测为 404，已改为官网新闻列表；文章发布时间只使用带时区的原始发布元数据，不使用修改日期。
 - 另启用 Simon Willison、Gary Marcus、Dwarkesh Patel、Gwern、Max Woolf、Giles Thomas、Sean Goedecke、Martin Alderson、Where's Your Ed At、LCamtuf 等 10 个英文技术博客。英文博客来自 [ai-daily-digest](https://github.com/vigorX777/ai-daily-digest) 收录的 Hacker News 社区高质量博客列表；本项目只选取 AI 内容较多的子集，并再次执行 AI 主题与标题可理解性过滤，跳过 `Quoting …`、`Note on …` 等脱离正文无法判断内容的微型条目。雷峰网、极客公园和英文 RSS 使用 Feed 内嵌正文或摘要。英文论文、版本和文章使用专门适配器，不套用中文正文规则。来源可在 `config.json` 中按 `name`、`url`、`type`、`content_kind`、`enabled`、`ai_only`、`max_stories` 管理。
 - `max_stories` 是每个来源的优先入选上限，用于先保证来源多样性。默认优先上限为 IT之家 5 条、量子位 3 条、英文技术博客各 1 条，其余已配置来源各 2 条；如果其他来源没有足够合格内容，程序会继续按全局热点和发布时间顺序从暂缓候选中回填，直到达到 `--limit` 或没有可用新闻。`config.json` 可以添加 RSS/Atom 来源；`ai_only: false` 的综合来源会先过滤 AI 相关条目。
 - `article_request_budget` 控制每次正文请求上限，默认40，允许1至100；在上限内继续检查后续候选，直到收录足够条数。`briefing.json` 的 `collection_stats` 与 `report.md` 记录主题不符、时间超窗、重复、正文失败、事件日期不合格、摘要失败、未检查候选和预算耗尽情况。没有任何合格新闻时，终端也会输出统计和失败原因。
@@ -86,6 +89,7 @@
 - 排除缺少时区/时间、未来及窗口外的新闻；按 URL 与标题去重，不足指定条数时如实减少。原站时间有误的条目可能被排除。
 - 单篇文章读取失败会跳过并记入 `report.md`。包含辟谣、纠正语境或无法保留归属限定的文章会保守跳过，因此可能漏掉部分值得报道的内容。没有合格资讯时明确失败，不用旧闻填充。
 - 分类为规则判断，可能需要人工调整。可先 `-CollectOnly`，核实输出的 `briefing.json` 中 `event_date`、来源日期与正文，再用 `-InputFile` 制作视频。
+- **社交动态补查（人工编辑必做）**：tech-news-digest 已配置 OpenAI、Anthropic、Google DeepMind、DeepSeek、Qwen、Kimi 等机构与相关负责人账号，包括 @thsottiaux。有 X 接口密钥时自动采集原帖线索，没有密钥时明确记录 `skipped_missing_credentials`；不能把 RSS 结果当作全网覆盖。人工精选时仍需补查近 5 天原帖，再与 RSS 候选去重。核对作者、原帖链接、北京时间、原文和上下文；投票还要核对问题、选项、截止时间，区分“征询用户意见”与“已实施的额度或产品变更”。社交帖、搜索摘要和缺少完整正式版本说明的 GitHub 条目保存为 `review-candidates.json`，不自动占用正式视频的至少 5 条名额，也不能写成公司已决定或已发布。X 页面可能限制读取；无法核实原帖时标记待核，不凭转载标题或搜索摘要编造内容。采集状态、原始候选与失败记录保留在本次输出的 `tech-news-digest/` 中，即使后续视频生成失败也可继续核实。
 - 英文论文、版本说明、官方公告和海外观点会先抽取完整英文句子及必要限制，再通过 DeepSeek 翻译为中文。需设置 `DEEPSEEK_API_KEY`；翻译先查本地 `data/translation_cache.json`，命中不调用接口，成功译文会写入缓存。`data/glossary.json` 的术语要求保留原文；术语缺失会重试一次，仍缺失则记入采集警告。视频标题、画面要点和口播只使用中文；翻译失败时整条停放，不回退显示英文。`source_text` 仍保存英文原文供核验，`source_language: en` 标记原始语言，`language: zh` 标记成片语言。超过单页容量的译文会跳过，不截断句子。
 - 网站拦截、限流、RSS变更或正文结构变化可能影响采集；会记录失败原因，不将失败解释为当天没有新闻。
 

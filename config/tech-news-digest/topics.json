@@ -1,0 +1,39 @@
+{
+  "topics": [
+    {
+      "id": "llm",
+      "emoji": "🧠",
+      "label": "大模型",
+      "description": "国内外具名大模型发布、能力、API、用量与订阅；具体事件优先。",
+      "search": {
+        "queries": [
+          "site:openai.com/news ChatGPT GPT model release update",
+          "site:anthropic.com/news Claude model release update",
+          "site:blog.google Gemini model release update",
+          "site:deepmind.google Gemini release benchmark",
+          "site:api-docs.deepseek.com/news DeepSeek",
+          "site:z.ai/blog GLM",
+          "Qwen Kimi 小米 MiMo 大模型 发布 更新",
+          "site:x.com/thsottiaux Codex poll usage limits"
+        ],
+        "twitter_queries": ["OpenAI", "Claude", "Gemini", "DeepSeek", "GLM", "Qwen", "MiMo"],
+        "must_include": ["OpenAI", "ChatGPT", "GPT", "Anthropic", "Claude", "Gemini", "DeepSeek", "GLM", "Qwen", "Kimi", "MiMo", "LLM", "大模型"],
+        "exclude": ["beginner guide", "tutorial", "pump dump", "get rich quick"]
+      },
+      "display": {"max_items": 10, "style": "detailed"}
+    },
+    {
+      "id": "ai-agent",
+      "emoji": "🤖",
+      "label": "模型产品与智能体",
+      "description": "Codex、Claude Code、Gemini及国内模型的具体产品、工具和安全更新。",
+      "search": {
+        "queries": ["OpenAI Codex Claude Code Gemini CLI release update", "GLM DeepSeek Qwen Kimi AI agent API update", "AI coding agent MCP security advisory credential leak"],
+        "twitter_queries": ["Codex", "Claude Code", "Gemini CLI"],
+        "must_include": ["Codex", "Claude", "Gemini", "agent", "API", "MCP", "智能体"],
+        "exclude": ["travel agent", "game agent", "beginner guide"]
+      },
+      "display": {"max_items": 5, "style": "detailed"}
+    }
+  ]
+}

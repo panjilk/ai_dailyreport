@@ -14,6 +14,7 @@ from .recency import RECENCY_DAYS, window_start, article_event_evidence, news_da
 from .international import (english_blog_candidate, english_summary, english_topic,
                             paper_details, source_rows, translate_to_chinese, flush_translation_cache)
 from .models import MODEL_NAMES, model_labels
+from .official_news import official_index_links, official_article_row
 from .topics import ai_related, editorial_candidate, playback_priority, concrete_news
 from .broadcast_log import recent_entries, url_fingerprint
 from .source_health import load_health, record_result, save_health
@@ -26,6 +27,7 @@ import requests
 
 _feed_thread = threading.local()
 _health_lock = threading.Lock()
+_TRANSLATOR_TAKES_KWARGS = None      # None=未探测, True/False=已知签名能力
 
 SHANGHAI = timezone(timedelta(hours=8), 'Asia/Shanghai')
 AI_TERMS = re.compile(r'人工智能|大模型|语言模型|生成式|机器学习|深度学习|神经网络|智能体|具身智能|扩散模型|ChatGPT|OpenAI|DeepSeek|Claude|Gemini|通义千问|(?<![a-z0-9_])(?:AI|LLM|GPT(?:-\d+)?)(?![a-z0-9_])', re.I)
@@ -460,7 +462,45 @@ def _summary(paragraphs, title):
     return bullets, spoken_title + ''.join(bullets)
 
 
-def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, health_path=None) -> dict:
+def _english_article_text(content):
+    """Read the original article, never promote a search/RSS snippet to evidence."""
+    soup = BeautifulSoup(content, 'html.parser')
+    for node in list(soup.select('script,style,nav,header,footer,aside,form,iframe')):
+        node.decompose()
+    root = soup.select_one('article') or soup.select_one('main')
+    if root is None:
+        raise ValueError('英文原文缺少可核实的文章正文')
+    paragraphs = []
+    for node in root.find_all('p'):
+        text = re.sub(r'\s+', ' ', node.get_text(' ', strip=True)).strip()
+        if len(re.findall(r'[A-Za-z]', text)) < 20:
+            continue
+        if text not in paragraphs:
+            paragraphs.append(text)
+    if not paragraphs:
+        raise ValueError('英文原文没有足够的正文，不使用RSS摘要替代')
+    return '\n'.join(paragraphs)
+
+
+def _call_translator(value, on_event=None, workers=None):
+    """translate_to_chinese 的签名在不同版本里不同：本地版支持事件回调与并发参数，
+    上游版只有 1 个参数。这里按需降级调用，避免合并后调用方与实现不匹配。"""
+    global _TRANSLATOR_TAKES_KWARGS
+    if _TRANSLATOR_TAKES_KWARGS is not False:
+        try:
+            result = translate_to_chinese(value, on_event=on_event, workers=workers,
+                                          defer_cache_write=True)
+            _TRANSLATOR_TAKES_KWARGS = True
+            return result
+        except TypeError as exc:
+            if 'unexpected keyword' not in str(exc):
+                raise
+            _TRANSLATOR_TAKES_KWARGS = False
+    return translate_to_chinese(value)
+
+
+def collect(config: dict, now: datetime, hours: int, limit: int,
+            log_path=None, health_path=None, *, extra_rows=(), extra_errors=()) -> dict:
     """Fetch enabled sources; fail explicitly if no eligible extract survives."""
     started = time.perf_counter()
     workers = collection_workers(config)
@@ -487,7 +527,19 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
             if isinstance(cap, bool) or not isinstance(cap, int) or not 1 <= cap <= 12:
                 raise ValueError('来源 max_stories 必须为1至12的整数')
             source_caps[source.get('name', 'RSS')] = cap
-    rows, errors = [], []
+    rows, errors = [], list(extra_errors)
+    for row in extra_rows:
+        stats['feed_entries'] += 1
+        if not editorial_candidate(row.get('title', '')) or not english_blog_candidate(
+                row.get('title', ''), row.get('abstract', '')):
+            stats['off_topic'] += 1
+            continue
+        if scope == 'foundation_models' and not english_topic(
+                row.get('title', ''), row.get('abstract', '')):
+            stats['off_topic'] += 1
+            continue
+        source_caps.setdefault(row.get('source_name', 'RSS'), 2)
+        rows.append(dict(row))
     health, health_warnings = load_health(health_path) if health_path else ({}, [])
     errors.extend(health_warnings)
     stale_sources = []
@@ -499,6 +551,26 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
         try:
 
             content = _fetch(url)
+            if source.get('type') == 'official_html_index':
+                article_notes, local_requests, local_failures = [], 0, 0
+                for article_url in official_index_links(source, content, now, hours):
+                    if stats['article_requests'] + local_requests >= budget:
+                        article_notes.append(f'{name}: 官网文章请求已达到本次正文预算')
+                        break
+                    local_requests += 1
+                    try:
+                        article = _fetch(article_url)
+                        row = official_article_row(source, article, article_url)
+                        feed_entries += 1
+                        if not english_topic(row['title'], row['abstract']):
+                            off_topic += 1
+                            continue
+                        source_rows_out.append(row)
+                    except (requests.RequestException, OSError, ValueError) as exc:
+                        local_failures += 1
+                        article_notes.append(f'{name} ({article_url}): {exc}')
+                return (source_rows_out, feed_entries, off_topic, article_notes or None,
+                        {'article_requests': local_requests, 'fetch_failures': local_failures})
             if source.get('type') in ('hf_papers', 'arxiv', 'github_releases', 'english_rss', 'official_changelog'):
                 for row in source_rows(source, content):
                     feed_entries += 1
@@ -511,7 +583,7 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
                         off_topic += 1
                         continue
                     source_rows_out.append(dict(row, source_name=name))
-                return source_rows_out, feed_entries, off_topic, None
+                return source_rows_out, feed_entries, off_topic, None, {}
             root = ET.fromstring(content)
             if root.tag.rsplit('}', 1)[-1].lower() not in ('rss', 'feed', 'rdf'):
                 raise ValueError('response is not RSS/Atom XML')
@@ -540,20 +612,26 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
                         row['feed_content'] = embedded
                 source_rows_out.append(row)
         except (requests.RequestException, OSError, ValueError, ET.ParseError) as exc:
-            return source_rows_out, feed_entries, off_topic, exc
-        return source_rows_out, feed_entries, off_topic, None
+            return source_rows_out, feed_entries, off_topic, exc, {}
+        return source_rows_out, feed_entries, off_topic, None, {}
 
     enabled_sources = [source for source in config.get('sources', []) if source.get('enabled', True)]
     for source, result in zip(enabled_sources, run_ordered(enabled_sources, fetch_source, workers)):
         name, url = source.get('name', 'RSS'), source.get('url', '')
         if isinstance(result, Exception):
-            result = ([], 0, 0, result)
-        source_rows_out, feed_entries, off_topic, exc = result
+            result = ([], 0, 0, result, {})
+        source_rows_out, feed_entries, off_topic, exc, deltas = result
         rows.extend(source_rows_out)
         stats['feed_entries'] += feed_entries
         stats['off_topic'] += off_topic
+        for key, value in deltas.items():
+            stats[key] += value
         with _health_lock:
             if exc is None:
+                if health_path:
+                    record_result(health, name, checked=now.isoformat())
+            elif isinstance(exc, list):
+                errors.extend(exc)          # 官网索引逐篇抓取的提示：源本身可用
                 if health_path:
                     record_result(health, name, checked=now.isoformat())
             else:
@@ -596,7 +674,7 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
     considered, attempted, budget_blocked = set(), set(), set()
 
     def needs_article_request(row):
-        return row.get('content_kind') == 'paper' or (
+        return row.get('requires_full_article') or row.get('content_kind') == 'paper' or (
             not row.get('content_kind') and not row.get('feed_content'))
 
     def translation_event(kind, detail):
@@ -609,7 +687,7 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
 
     def translate_copy(value):
         try:
-            return translate_to_chinese(value, on_event=translation_event, defer_cache_write=True)
+            return _call_translator(value, on_event=translation_event, workers=workers)
         except (requests.RequestException, OSError, ValueError):
             stats['translation_failures'] += 1
             raise
@@ -634,9 +712,18 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
                     content = _fetch(row['source_url'])
                     stage = 'date_rejected'
                     original, event = paper_details(content)
+                elif row.get('requires_full_article'):
+                    stage = 'fetch_failures'
+                    stats['article_requests'] += 1
+                    content = _fetch(row['source_url'])
+                    stage = 'content_rejected'
+                    original = _english_article_text(content)
+                    event = dict(event_date=row.get('event_date', row['published']),
+                                 event_date_evidence=row.get('event_date_evidence', '原文发布时间；事件日期待正文核实'))
                 else:
                     original = row['abstract']
-                    event = {k: row[k] for k in ('event_date', 'event_date_evidence')}
+                    event = dict(event_date=row.get('event_date', row['published']),
+                                 event_date_evidence=row.get('event_date_evidence', '原文发布时间；事件日期待正文核实'))
                 stage = 'date_rejected'
                 moment = _date(event['event_date'])
                 if moment is None or not max(now - timedelta(hours=hours), window_start(now)) <= moment <= now:
@@ -659,7 +746,9 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
                     def translate_item(item):
                         local_events = []
                         try:
-                            value = translate_to_chinese(item, on_event=lambda kind, detail: local_events.append((kind, detail)), workers=workers, defer_cache_write=True)
+                            value = _call_translator(
+                                item, on_event=lambda kind, detail: local_events.append((kind, detail)),
+                                workers=workers)
                             return value, local_events, None
                         except (requests.RequestException, OSError, ValueError) as exc:
                             return None, local_events, exc
@@ -668,6 +757,8 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
                     pending = [(i, value) for i, value in enumerate(values) if i == values.index(value)]
                     results = run_ordered(pending, lambda pair: translate_item(pair[1]), min(workers, 8))
                     for (i, _), result in zip(pending, results):
+                        if isinstance(result, Exception):      # 工作线程自身抛错
+                            result = (None, [], result)
                         translated[i] = result
                     for i, value in enumerate(values):
                         if translated[i] is None:
@@ -681,6 +772,13 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
                         translated[i] = output
                 display_title, *bullets = translated
                 translation_seconds[0] += time.perf_counter() - translation_started
+                if row.get('requires_full_article') or row.get('verify_article_event'):
+                    stage = 'date_rejected'
+                    event = article_event_evidence('\n'.join(bullets), row['published'],
+                                                   display_title, scope=scope)
+                    if not event_cutoff_date <= news_date(event['event_date']) <= today:
+                        raise ValueError('原文事件不在本次搜查窗口，不能用RSS发布日期替代')
+                    stage = 'summary_rejected'
                 # Reject an oversized extract before it can fail the whole video.
                 if config.get('require_concrete_news') and not concrete_news(display_title, bullets):
                     raise ValueError('摘要缺少具体主体、事件或可说明的变化，不作为新闻入选')
@@ -699,12 +797,12 @@ def collect(config: dict, now: datetime, hours: int, limit: int, log_path=None, 
                                  '官方' if kind == 'official_article' else
                                  '模型工具')
                 story = dict(row, title=display_title, source_title=row['title'],
-                             **{k: v for k, v in event.items() if k not in row},
                              id=hashlib.sha256(row['source_url'].encode()).hexdigest()[:16],
                              category=category, nav_label=nav_label,
                              bullets=bullets, narration=narration, evidence=''.join(bullets),
                              verification='machine_translated_english_source', language='zh',
                              source_language='en', source_text=original)
+                story.update(event)
                 selected_stories.append((index, story))
                 source_selected[source_name] = source_selected.get(source_name, 0) + 1
                 return
