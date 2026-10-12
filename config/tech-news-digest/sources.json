@@ -1,0 +1,25 @@
+{
+  "description": "AI日报补充采集配置；仅大模型与模型产品，保留原项目中文来源。X和搜索结果先进入待审队列。",
+  "sources": [
+    {"id": "googleai-rss", "type": "rss", "name": "Google AI", "url": "https://blog.google/innovation-and-ai/technology/ai/rss/", "enabled": true, "priority": true, "official": true, "topics": ["llm", "ai-agent"]},
+    {"id": "gemini-rss", "type": "rss", "name": "Google Gemini", "url": "https://blog.google/products-and-platforms/products/gemini/rss/", "enabled": true, "priority": true, "official": true, "topics": ["llm", "ai-agent"]},
+    {"id": "google-research-rss", "type": "rss", "name": "Google Research", "url": "https://research.google/blog/rss/", "enabled": true, "priority": true, "official": true, "topics": ["llm"]},
+    {"id": "the-decoder-rss", "type": "rss", "name": "The Decoder", "url": "https://the-decoder.com/feed/", "enabled": true, "priority": true, "official": false, "topics": ["llm", "ai-agent"]},
+    {"id": "interconnects-rss", "type": "rss", "name": "Interconnects", "url": "https://www.interconnects.ai/feed", "enabled": true, "priority": false, "official": false, "topics": ["llm"]},
+    {"id": "openai-python-github", "type": "github", "name": "OpenAI Python SDK", "repo": "openai/openai-python", "enabled": true, "priority": true, "topics": ["llm", "ai-agent"]},
+    {"id": "anthropic-sdk-github", "type": "github", "name": "Anthropic Python SDK", "repo": "anthropics/anthropic-sdk-python", "enabled": true, "priority": true, "topics": ["llm", "ai-agent"]},
+    {"id": "google-genai-github", "type": "github", "name": "Google Gemini SDK", "repo": "googleapis/python-genai", "enabled": true, "priority": true, "topics": ["llm", "ai-agent"]},
+    {"id": "vllm-github", "type": "github", "name": "vLLM", "repo": "vllm-project/vllm", "enabled": true, "priority": false, "topics": ["llm"]},
+    {"id": "sglang-github", "type": "github", "name": "SGLang", "repo": "sgl-project/sglang", "enabled": true, "priority": false, "topics": ["llm"]},
+    {"id": "openai-twitter", "type": "twitter", "name": "OpenAI", "handle": "OpenAI", "enabled": true, "priority": true, "topics": ["llm", "ai-agent"]},
+    {"id": "anthropic-twitter", "type": "twitter", "name": "Anthropic / Claude", "handle": "AnthropicAI", "enabled": true, "priority": true, "topics": ["llm", "ai-agent"]},
+    {"id": "deepmind-twitter", "type": "twitter", "name": "Google DeepMind / Gemini", "handle": "GoogleDeepMind", "enabled": true, "priority": true, "topics": ["llm"]},
+    {"id": "googleai-twitter", "type": "twitter", "name": "Google AI", "handle": "GoogleAI", "enabled": true, "priority": true, "topics": ["llm", "ai-agent"]},
+    {"id": "tibo-twitter", "type": "twitter", "name": "Tibo Sottiaux", "handle": "thsottiaux", "enabled": true, "priority": true, "topics": ["llm", "ai-agent"], "note": "负责人原帖与投票须核实上下文；征询意见不能当成已实施政策。"},
+    {"id": "sama-twitter", "type": "twitter", "name": "Sam Altman", "handle": "sama", "enabled": true, "priority": true, "topics": ["llm"]},
+    {"id": "demis-twitter", "type": "twitter", "name": "Demis Hassabis", "handle": "demishassabis", "enabled": true, "priority": true, "topics": ["llm"]},
+    {"id": "deepseek-twitter", "type": "twitter", "name": "DeepSeek", "handle": "deepseek_ai", "enabled": true, "priority": true, "topics": ["llm"]},
+    {"id": "qwen-twitter", "type": "twitter", "name": "Qwen", "handle": "Alibaba_Qwen", "enabled": true, "priority": true, "topics": ["llm"]},
+    {"id": "kimi-twitter", "type": "twitter", "name": "Kimi / Moonshot", "handle": "Kimi_Moonshot", "enabled": true, "priority": true, "topics": ["llm"]}
+  ]
+}

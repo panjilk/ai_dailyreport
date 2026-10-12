@@ -12,6 +12,7 @@ from .recency import RECENCY_DAYS, window_start, article_event_evidence, news_da
 from .international import (english_blog_candidate, english_summary, english_topic,
                             paper_details, source_rows, translate_to_chinese)
 from .models import MODEL_NAMES, model_labels
+from .official_news import official_index_links, official_article_row
 from .topics import ai_related, editorial_candidate, playback_priority, concrete_news
 
 from bs4 import BeautifulSoup
@@ -452,7 +453,28 @@ def _summary(paragraphs, title):
     return bullets, spoken_title + ''.join(bullets)
 
 
-def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
+def _english_article_text(content):
+    """Read the original article, never promote a search/RSS snippet to evidence."""
+    soup = BeautifulSoup(content, 'html.parser')
+    for node in list(soup.select('script,style,nav,header,footer,aside,form,iframe')):
+        node.decompose()
+    root = soup.select_one('article') or soup.select_one('main')
+    if root is None:
+        raise ValueError('英文原文缺少可核实的文章正文')
+    paragraphs = []
+    for node in root.find_all('p'):
+        text = re.sub(r'\s+', ' ', node.get_text(' ', strip=True)).strip()
+        if len(re.findall(r'[A-Za-z]', text)) < 20:
+            continue
+        if text not in paragraphs:
+            paragraphs.append(text)
+    if not paragraphs:
+        raise ValueError('英文原文没有足够的正文，不使用RSS摘要替代')
+    return '\n'.join(paragraphs)
+
+
+def collect(config: dict, now: datetime, hours: int, limit: int,
+            *, extra_rows=(), extra_errors=()) -> dict:
     """Fetch enabled sources; fail explicitly if no eligible extract survives."""
     _validate(now, hours, limit)
     event_cutoff_date = max(now - timedelta(hours=hours), window_start(now)).astimezone(SHANGHAI).date()
@@ -474,13 +496,43 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
             if isinstance(cap, bool) or not isinstance(cap, int) or not 1 <= cap <= 12:
                 raise ValueError('来源 max_stories 必须为1至12的整数')
             source_caps[source.get('name', 'RSS')] = cap
-    rows, errors = [], []
+    rows, errors = [], list(extra_errors)
+    for row in extra_rows:
+        stats['feed_entries'] += 1
+        if not editorial_candidate(row.get('title', '')) or not english_blog_candidate(
+                row.get('title', ''), row.get('abstract', '')):
+            stats['off_topic'] += 1
+            continue
+        if scope == 'foundation_models' and not english_topic(
+                row.get('title', ''), row.get('abstract', '')):
+            stats['off_topic'] += 1
+            continue
+        source_caps.setdefault(row.get('source_name', 'RSS'), 2)
+        rows.append(dict(row))
     for source in config.get('sources', []):
         if not source.get('enabled', True):
             continue
         name, url = source.get('name', 'RSS'), source.get('url', '')
         try:
             content = _fetch(url)
+            if source.get('type') == 'official_html_index':
+                for article_url in official_index_links(source, content, now, hours):
+                    if stats['article_requests'] >= budget:
+                        errors.append(f'{name}: 官网文章请求已达到本次正文预算')
+                        break
+                    stats['article_requests'] += 1
+                    try:
+                        article = _fetch(article_url)
+                        row = official_article_row(source, article, article_url)
+                        stats['feed_entries'] += 1
+                        if not english_topic(row['title'], row['abstract']):
+                            stats['off_topic'] += 1
+                            continue
+                        rows.append(row)
+                    except (requests.RequestException, OSError, ValueError) as exc:
+                        stats['fetch_failures'] += 1
+                        errors.append(f'{name} ({article_url}): {exc}')
+                continue
             if source.get('type') in ('hf_papers', 'arxiv', 'github_releases', 'english_rss', 'official_changelog'):
                 for row in source_rows(source, content):
                     stats['feed_entries'] += 1
@@ -535,7 +587,7 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
     considered, attempted, budget_blocked = set(), set(), set()
 
     def needs_article_request(row):
-        return row.get('content_kind') == 'paper' or (
+        return row.get('requires_full_article') or row.get('content_kind') == 'paper' or (
             not row.get('content_kind') and not row.get('feed_content'))
 
     def process_candidate(index, row):
@@ -555,9 +607,18 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                     content = _fetch(row['source_url'])
                     stage = 'date_rejected'
                     original, event = paper_details(content)
+                elif row.get('requires_full_article'):
+                    stage = 'fetch_failures'
+                    stats['article_requests'] += 1
+                    content = _fetch(row['source_url'])
+                    stage = 'content_rejected'
+                    original = _english_article_text(content)
+                    event = dict(event_date=row.get('event_date', row['published']),
+                                 event_date_evidence=row.get('event_date_evidence', '原文发布时间；事件日期待正文核实'))
                 else:
                     original = row['abstract']
-                    event = {k: row[k] for k in ('event_date', 'event_date_evidence')}
+                    event = dict(event_date=row.get('event_date', row['published']),
+                                 event_date_evidence=row.get('event_date_evidence', '原文发布时间；事件日期待正文核实'))
                 stage = 'date_rejected'
                 moment = _date(event['event_date'])
                 if moment is None or not max(now - timedelta(hours=hours), window_start(now)) <= moment <= now:
@@ -575,6 +636,13 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                 display_title = translate_to_chinese(row['title'])
                 bullets = [translate_to_chinese(bullet) if re.search(r'[A-Za-z]', bullet) else bullet
                            for bullet in source_bullets]
+                if row.get('requires_full_article') or row.get('verify_article_event'):
+                    stage = 'date_rejected'
+                    event = article_event_evidence('\n'.join(bullets), row['published'],
+                                                   display_title, scope=scope)
+                    if not event_cutoff_date <= news_date(event['event_date']) <= today:
+                        raise ValueError('原文事件不在本次搜查窗口，不能用RSS发布日期替代')
+                    stage = 'summary_rejected'
                 # Reject an oversized extract before it can fail the whole video.
                 if config.get('require_concrete_news') and not concrete_news(display_title, bullets):
                     raise ValueError('摘要缺少具体主体、事件或可说明的变化，不作为新闻入选')
@@ -593,12 +661,12 @@ def collect(config: dict, now: datetime, hours: int, limit: int) -> dict:
                                  '官方' if kind == 'official_article' else
                                  '模型工具')
                 story = dict(row, title=display_title, source_title=row['title'],
-                             **{k: v for k, v in event.items() if k not in row},
                              id=hashlib.sha256(row['source_url'].encode()).hexdigest()[:16],
                              category=category, nav_label=nav_label,
                              bullets=bullets, narration=narration, evidence=''.join(bullets),
                              verification='machine_translated_english_source', language='zh',
                              source_language='en', source_text=original)
+                story.update(event)
                 selected_stories.append((index, story))
                 source_selected[source_name] = source_selected.get(source_name, 0) + 1
                 return

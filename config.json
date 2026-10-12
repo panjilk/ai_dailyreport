@@ -11,6 +11,12 @@
   "topic_scope": "all_ai",
   "require_concrete_news": true,
   "article_request_budget": 40,
+  "tech_news_digest": {
+    "enabled": true,
+    "skill_dir": "vendor/tech-news-digest",
+    "defaults_dir": "config/tech-news-digest",
+    "step_timeout_seconds": 90
+  },
   "sources": [
     {
       "name": "IT之家",
@@ -105,10 +111,11 @@
     },
     {
       "name": "Anthropic News",
-      "url": "https://www.anthropic.com/news/rss.xml",
-      "type": "english_rss",
+      "url": "https://www.anthropic.com/news",
+      "type": "official_html_index",
       "content_kind": "official_article",
       "ai_only": true,
+      "max_articles": 6,
       "max_stories": 2,
       "enabled": true
     },

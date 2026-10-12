@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/draco-agent/tech-news-digest",
+  "commit": "c3aeafb940221debd597ed2963dd783755757f4c",
+  "skill_version": "3.17.1",
+  "installed_on": "2026-10-12",
+  "license": "MIT; original LICENSE retained inside tech-news-digest",
+  "integration": "Project profiles are in config/tech-news-digest; Python adapter is dailyreport/tech_digest.py.",
+  "local_patches": [
+    "fetch-twitter.py / fetch-web.py: use TECH_NEWS_DIGEST_STATE_DIR for caches, including on Windows",
+    "fetch-twitter.py: preserve original post text and API payload; use documented X post.fields and poll expansions",
+    "fetch-github.py: preserve REST release body, published_at, tag_name, draft and prerelease flags for evidence checking; Atom remains review-only",
+    "fetch-rss.py: reject source dates without timezones, preserve original published fields, and bypass conditional cache when the requested reporting window expands or a legacy guessed-date cache is found"
+  ]
+}

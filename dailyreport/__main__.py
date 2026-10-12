@@ -10,6 +10,7 @@ from pathlib import Path
 import sys
 
 from .collect import collect
+from .tech_digest import collect_digest
 from .recency import enforce_recency
 from .render import CATEGORIES, prepare_briefing, render, validate_briefing, window_label
 
@@ -56,6 +57,18 @@ def export_text(briefing, output):
         md += ['## 筛选统计', '', *[f'- {labels.get(k, k)}：{v}' for k, v in briefing['collection_stats'].items()], '']
     if briefing.get('excluded_stories'):
         md += ['## 导入稿件筛选', '', *[f'- {x["title"]}：{x["reason"]}' for x in briefing['excluded_stories']], '']
+    if briefing.get('tech_news_digest'):
+        status = briefing['tech_news_digest']
+        (output / 'collection-status.json').write_text(
+            json.dumps(status, ensure_ascii=False, indent=2), encoding='utf-8')
+        md += ['## tech-news-digest 采集状态', '',
+               '渠道状态与失败记录见 collection-status.json；缺少密钥不代表该渠道没有新闻。', '']
+    if briefing.get('pending_candidates'):
+        pending = briefing['pending_candidates']
+        (output / 'review-candidates.json').write_text(
+            json.dumps(pending, ensure_ascii=False, indent=2), encoding='utf-8')
+        md += ['## 待审候选', '',
+               f'{len(pending)} 条线索保存于 review-candidates.json；需核实原文、事件时间和上下文后再编辑入稿，不计入正式新闻条数。', '']
     (output / 'report.md').write_text('\n'.join(md), encoding='utf-8')
     (output / 'script.txt').write_text('\n'.join(script), encoding='utf-8')
 
@@ -130,14 +143,32 @@ def main(argv=None):
             briefing = json.loads(args.input.read_text(encoding='utf-8-sig'))
         else:
             print(f'正在采集最近 {args.hours} 小时的 AI 新闻……', flush=True)
-            briefing = collect(config, now, args.hours, args.limit)
+            if config.get('tech_news_digest', {}).get('enabled', False):
+                output = (args.output or ROOT / 'outputs' / now.strftime('%Y-%m-%d_%H%M%S_%f')).resolve()
+                if any((output / name).exists() for name in ('daily.mp4', 'briefing.json', 'tech-news-digest')):
+                    raise ValueError('该目录已有日报或采集记录，请使用新的 --output，避免覆盖。')
+                print('正在运行 tech-news-digest 大模型采集管线……', flush=True)
+                digest = collect_digest(config, now, args.hours, output / 'tech-news-digest')
+                print(f"补充候选 {len(digest['rows'])} 条，待审线索 {len(digest['pending'])} 条。", flush=True)
+                for channel, layer in digest['status'].get('layers', {}).items():
+                    if layer.get('state') == 'skipped_missing_credentials':
+                        print(f'{channel} 未采集：尚未配置接口密钥，不能据此判断是否有新消息。', flush=True)
+                for error in digest['errors']:
+                    print(f'采集提示：{error}', flush=True)
+                briefing = collect(config, now, args.hours, args.limit,
+                                   extra_rows=digest['rows'], extra_errors=digest['errors'])
+                briefing['tech_news_digest'] = digest['status']
+                briefing['pending_candidates'] = digest['pending']
+            else:
+                briefing = collect(config, now, args.hours, args.limit)
         briefing.setdefault('edition_start_date', config.get('edition_start_date', briefing['date']))
         briefing = prepare_briefing(briefing)
         validate_briefing(briefing)
         enforce_recency(briefing, now, args.hours)
         if not args.collect_only:
             require_minimum_video_stories(briefing)
-        output = (args.output or ROOT / 'outputs' / now.strftime('%Y-%m-%d_%H%M%S_%f')).resolve()
+        if args.input or not config.get('tech_news_digest', {}).get('enabled', False):
+            output = (args.output or ROOT / 'outputs' / now.strftime('%Y-%m-%d_%H%M%S_%f')).resolve()
         if (output / 'daily.mp4').exists() or (output / 'briefing.json').exists():
             raise ValueError('该目录已有日报，请指定新的 --output，避免覆盖已有成片或文字稿。')
         export_text(briefing, output)
