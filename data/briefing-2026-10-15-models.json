@@ -1,0 +1,154 @@
+{
+  "date": "2026-10-15",
+  "window_days": 5,
+  "title": "AI 日报 · 2026-10-15",
+  "edition_start_date": "2026-09-21",
+  "edition_note": "七条模型、开发生态与应用更新；案例披露和未来计划单独说明。",
+  "stories": [
+    {
+      "title": "Grok Voice 3.0 发布，语音延迟低于1秒",
+      "nav_label": "xAI",
+      "category": "模型发布",
+      "source_name": "xAI 官方博客",
+      "source_url": "https://x.ai/news/grok-voice-3",
+      "published": "2026-10-14",
+      "event_date": "2026-10-14",
+      "event_date_evidence": "官方新闻索引标注 Oct 14, 2026；正文 today available，IT之家10月15日报道交叉核对。",
+      "verification": "original_source_checked_by_editor",
+      "bullets": [
+        "10月14日，xAI 发布 Grok Voice 3.0；官方称语音响应延迟低于1秒，面向自然对话与客服通话，现已开放语音智能体 API。",
+        "官方引用 Artificial Analysis 语音综合榜86.9分，全双工测试97%；前者综合推理、偏好与任务完成，不代表所有任务都领先。",
+        "价格维持每分钟0.08美元，使用 grok-voice-latest 的应用自动升级；客服解决率等部署数据为厂商披露，并非本栏目复测。"
+      ],
+      "video_bullets": [
+        "Grok Voice 3.0在10月14日发布，主打低于一秒的语音响应，能处理停顿和插话，适合客服与实时对话。接口价格仍是每分钟零点零八美元，默认最新版本会自动升级；低延迟和客服效果来自厂商公布的测试与部署数据。"
+      ],
+      "supporting_sources": []
+    },
+    {
+      "title": "GPT-6 Astra 助 Amp 扩展编码外任务",
+      "nav_label": "OpenAI",
+      "category": "开发生态",
+      "source_name": "OpenAI 官方案例",
+      "source_url": "https://openai.com/index/amp-beyond-coding/",
+      "published": "2026-10-14",
+      "event_date": "2026-10-14",
+      "event_date_evidence": "官方案例明确标注 October 14, 2026；报道日为案例披露日，不把既有集成写成当日发布。",
+      "verification": "original_source_checked_by_editor",
+      "bullets": [
+        "10月14日，OpenAI 披露 Amp 智能体案例；GPT-6 Astra 被用于代码、文档与页面设计，进一步覆盖产品构思及上线后的工作。",
+        "Amp 介绍通过 ChatGPT 账号登录接入模型，并用 Puck 协调其他智能体；实时语音由 GPT-Live-1 支持，可远离电脑管理任务。",
+        "更快的 Ultrafast 模式仍在测试，账号登录不代表无限额度；这些是合作厂商使用经验，不是 GPT-6 Astra 当日新发布。"
+      ],
+      "video_bullets": [
+        "OpenAI在10月14日披露Amp案例：GPT-6 Astra不只写代码，也参与文档、页面设计和产品规划。用户可用ChatGPT账号登录，并通过语音助手协调任务；更快的模式仍在测试，这次是应用进展，不是新模型发布。"
+      ],
+      "supporting_sources": []
+    },
+    {
+      "title": "英特尔推理微服务自动调优至强部署",
+      "nav_label": "Intel",
+      "category": "开发生态",
+      "source_name": "Intel 官方新闻室",
+      "source_url": "https://www.intel.com/content/www/us/en/newsroom/news/artificial-intelligence/intel-inference-microservices-tuned-llm-processors.html",
+      "published": "2026-10-14",
+      "event_date": "2026-10-14",
+      "event_date_evidence": "官方新闻室索引列 October 14, 2026；正文宣布微服务，IT之家同日详述首批规格。",
+      "verification": "original_source_checked_by_editor",
+      "bullets": [
+        "10月14日，英特尔推出大模型推理微服务；一个容器服务一个模型，启动时检测处理器并加载厂商验证的配置，减少手动调参。",
+        "首批基于 vLLM，支持第四至六代至强及 BF16 精度；通过 OpenAI 兼容接口提供服务，官方示例部署 Qwen3-4B。",
+        "当前先覆盖至强，GPU 支持属于后续计划；工具调用及结构化输出只是引擎透传，尚未验证为正式支持，模型许可仍需自行核对。"
+      ],
+      "video_bullets": [
+        "英特尔在10月14日推出大模型推理微服务，让容器自动识别至强处理器并选择调优参数，减少企业部署时的手工配置。首批支持第四到第六代至强，提供兼容接口；GPU支持仍是后续计划，工具调用也还没有正式验证。"
+      ],
+      "supporting_sources": [
+        {
+          "name": "IT之家规格详解",
+          "url": "https://www.ithome.com/1/013/130.htm"
+        }
+      ]
+    },
+    {
+      "title": "豆包工作支持导入对话、技能与记忆",
+      "nav_label": "字节",
+      "category": "产品应用",
+      "source_name": "IT之家",
+      "source_url": "https://www.ithome.com/1/012/807.htm",
+      "published": "2026-10-14",
+      "event_date": "2026-10-14",
+      "event_date_evidence": "页面2026/10/14 12:50:45；正文明确今日宣布上线，凤凰网同日稿及次日极客公园交叉印证。",
+      "verification": "original_source_checked_by_editor",
+      "bullets": [
+        "10月14日，豆包工作上线数据导入与同步；支持从 ChatGPT、Claude Code 和 Trae Work 迁移既有配置，减少换工具时重复交代背景。",
+        "可导入任务偏好、技能、连接器、工作记忆、项目与历史会话；内容自动归档，历史对话保留原有上下文，便于继续任务。",
+        "同步新增在新对话中继续、消息注释及摘要侧栏；迁移范围以已适配产品和可导入内容为准，不等于任意工具都能完整互通。"
+      ],
+      "video_bullets": [
+        "豆包工作在10月14日上线数据导入与同步，支持从ChatGPT、Claude Code和Trae Work迁移对话、技能及工作记忆，换工具时不用反复交代背景。它还新增消息注释和摘要侧栏；迁移范围以已适配的产品和内容为准。"
+      ],
+      "supporting_sources": []
+    },
+    {
+      "title": "千问办公电商版开放邀测，首推4项能力",
+      "nav_label": "阿里",
+      "category": "产品应用",
+      "source_name": "南方都市报",
+      "source_url": "https://finance.eastmoney.com/a/202610143895695362.html",
+      "published": "2026-10-14",
+      "event_date": "2026-10-14",
+      "event_date_evidence": "东方财富转载页面标注2026年10月14日20:38，正文明确10月14日发布并开启邀测。",
+      "verification": "original_source_checked_by_editor",
+      "bullets": [
+        "10月14日，阿里千问办公发布电商版并开启邀测；在产品内切换电商经营模式，可围绕多平台、多店铺组织商家日常运营任务。",
+        "首批四项专业能力包括跨平台经营看板、趋势与卖点分析、批量素材生成及投放回报优化；已接入千牛、有赞等经营工具。",
+        "定位是面向多平台的电商智能体，并非千问基础模型升级；主动发现异常并按授权处理仍属后续计划，邀测功能也会继续完善。"
+      ],
+      "video_bullets": [
+        "千问办公在10月14日发布电商版，首批带来经营看板、趋势分析、批量素材和投放优化四项专业能力，帮助商家处理跨平台运营。产品目前开放邀测；主动发现库存和投放异常属于后续计划，并不是已经全面上线的功能。"
+      ],
+      "supporting_sources": []
+    },
+    {
+      "title": "OpenAI Daybreak 案例：恶意软件分析约8小时",
+      "nav_label": "OpenAI",
+      "category": "产品应用",
+      "source_name": "OpenAI 官方案例",
+      "source_url": "https://openai.com/index/sentinelone/",
+      "published": "2026-10-14",
+      "event_date": "2026-10-14",
+      "event_date_evidence": "官方案例日期 October 14, 2026；8小时与4至6周均为受访企业披露的经验值。",
+      "verification": "original_source_checked_by_editor",
+      "bullets": [
+        "10月14日，OpenAI 发布 SentinelOne 案例；安全企业使用 Daybreak 分析恶意软件，称原需四至六周的逆向工作现在约8小时完成。",
+        "更快的样本分析有助于比较共同组件，发现单个调查难以揭示的威胁关联；这是防御场景中的工作流改进，而非新模型公告。",
+        "效率数字来自企业高管自述，不能泛化到所有样本；重大架构变更仍需人工复核，责任与最终判断不会因为自动化而转移。"
+      ],
+      "video_bullets": [
+        "OpenAI在10月14日公布安全应用案例：SentinelOne使用Daybreak分析恶意软件，称部分逆向工作从四到六周缩短至约八小时，便于比较更多样本、发现关联。这是企业披露的效果，不代表所有任务；关键决策仍需人工负责。"
+      ],
+      "supporting_sources": []
+    },
+    {
+      "title": "Anthropic 测试小模型在低成本设备上推理",
+      "nav_label": "Anthropic",
+      "category": "技术洞察",
+      "source_name": "Anthropic 官方研究",
+      "source_url": "https://www.anthropic.com/research/self-replicating-ai",
+      "published": "2026-10-12",
+      "event_date": "2026-10-12",
+      "event_date_evidence": "官方研究页面标注 Oct 12, 2026；正文提供15台TV盒子、0.39 token/s及分步实验限定。",
+      "verification": "original_source_checked_by_editor",
+      "bullets": [
+        "10月12日，Anthropic 公布小模型部署与自主复制风险研究；用15台低成本电视盒子分布式运行 Gemma4-26B-A4B。",
+        "该演示速度每秒0.39 token，并不适合流畅聊天；另一项测试中，90亿参数模型在九类硬件中的八类成功配置推理。",
+        "300亿参数及以下模型已能完成多个单独步骤，但端到端串联仍会出错；未来能力属于预测，实验不等于现实已出现自主扩散。"
+      ],
+      "video_bullets": [
+        "Anthropic在10月12日公布小模型风险实验：十五台低成本电视盒子能协同运行一个模型，但速度只有每秒零点三九个token。小模型已经能完成若干部署步骤，端到端执行仍会出错；这项实验不是现实中已发生自主扩散的证据。"
+      ],
+      "supporting_sources": []
+    }
+  ]
+}

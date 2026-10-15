@@ -17,6 +17,7 @@ ALIASES = {
     'Llama': ('Llama', 'Meta Llama'), 'Grok': ('Grok', 'xAI'), 'Mistral': ('Mistral',),
     '小米MiMo': ('MiMo', 'Xiaomi MiMo', '小米MiMo', '小米大模型'),
     '盘古': ('Pangu', '盘古'), '日日新': ('SenseNova', '日日新', '商汤'),
+    'LFM': ('LFM', 'Liquid AI'),
     'LongCat': ('LongCat', '美团LongCat'), 'MiniCPM': ('MiniCPM', 'OpenBMB'),
     'InternVL': ('InternVL', 'OpenGVLab'), 'BAAI': ('BAAI', '智源'),
     'Ant Ling': ('Ant Ling', '蚂蚁百灵'), 'Wan': ('Wan', '万相'),

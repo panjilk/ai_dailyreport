@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from dailyreport.render import split_sentences, srt_time, wrap_text, font, validate_briefing
@@ -282,6 +283,64 @@ def test_speech_verification_accepts_all_words_and_checks_audio_tail():
         verify_word_coverage('完整内容，必须读完。', words, 1.5)
 
 
+def test_split_sentences_never_breaks_a_latin_word():
+
+    from dailyreport.render import split_sentences
+
+    text = ('GPT-6.1 Sol 在 Codex 和 ChatGPT Work 里的默认上下文提到 50 万 token，'
+
+            '长任务更少被压缩，模型上限仍是 100 万。')
+
+    chunks = split_sentences(text, 18)
+
+    assert ''.join(chunks) == text
+
+    for left, right in zip(chunks, chunks[1:]):
+
+        splits_word = bool(re.search(r'[0-9A-Za-z]$', left) and re.search(r'^[0-9A-Za-z]', right))
+
+        assert not splits_word, f'切断了拉丁词: {left!r} | {right!r}'
+
+
+
+
+
+def test_split_sentences_never_breaks_a_model_id():
+
+    from dailyreport.render import split_sentences
+
+    text = ('Gemini API 把 gemini-3.7-flash 的请求自动转到 3.8 Flash、3.5 Flash 转到 3.6 Flash，'
+
+            '开发者要改名并回归测试；旧版深度研究智能体也已经停用，迁移到 2026 年 4 月的版本。')
+
+    for limit in (16, 20, 24, 32, 40):
+
+        chunks = split_sentences(text, limit)
+
+        assert ''.join(chunks) == text
+
+        for left, right in zip(chunks, chunks[1:]):
+
+            cut_in_id = re.search(r'[0-9A-Za-z._/-]$', left) and re.search(r'^[0-9A-Za-z]', right)
+
+            assert not cut_in_id, f'limit={limit} 切断了标识符: {left!r} | {right!r}'
+
+
+
+
+
+def test_preferred_cut_prefers_punctuation_and_space():
+    from dailyreport.render import _preferred_cut
+    for text in ('阿里千问发布 QwenGyre，用 Partial', '转到 3.8 Flash、开发者'):
+        cut = _preferred_cut(text)
+        assert 0 < cut <= len(text)
+        assert text[cut - 1] in '、，' or text[cut - 1].isspace(), text[:cut]
+        assert cut >= len(text) - 12
+    assert _preferred_cut('abcdefghijklmnop') == 0
+
+
+
+
 def test_subtitle_cues_preserve_entire_sentence_and_hold_the_last_word():
     from dailyreport.render import subtitle_cues
     text = '这是完整新闻，讲清楚事件、细节和限制，最后一句话也必须全部读完。'
@@ -291,3 +350,70 @@ def test_subtitle_cues_preserve_entire_sentence_and_hold_the_last_word():
     assert cues[-1]['end_frame'] == 360
     assert all(c['end_frame'] > c['start_frame'] for c in cues)
     assert all(cues[i-1]['end_frame'] == cues[i]['start_frame'] for i in range(1,len(cues)))
+
+
+def test_volc_words_are_converted_to_100ns_and_reject_misalignment():
+    from dailyreport.render import volc_word_boundaries
+    words = [{'word': 'GPT-6.1', 'startTime': 1.395, 'endTime': 1.425},
+             {'word': '的', 'startTime': 1.425, 'endTime': 1.615}]
+    result = volc_word_boundaries('GPT-6.1的', words)
+    assert result == [{'text': 'GPT-6.1', 'offset': 13950000, 'duration': 300000},
+                      {'text': '的', 'offset': 14250000, 'duration': 1900000}]
+    import pytest
+    with pytest.raises(ValueError, match='字幕文字无法与火山返回词序列对齐'):
+        volc_word_boundaries('GPT-6.1错', words)
+
+
+def test_semantic_focus_uses_matching_display_bullet_not_cue_index():
+    from dailyreport.render import semantic_focus
+    bullets = ['上下文从27.2万提高到50万token。', '减少长任务中的上下文压缩。', '最大上下文仍是100万token。']
+    assert semantic_focus('最大仍保持100万。', bullets, 'GPT-6.1把上下文提到50万，减少压缩；最大仍保持100万。') == 2
+
+
+def test_volc_stream_keeps_words_after_empty_fulltext_and_deduplicates(tmp_path, monkeypatch):
+    import base64, json, urllib.request, wave
+    import dailyreport.render as renderer
+    events = [{'data': base64.b64encode(b'audio').decode(), 'sentence': {'words': [
+        {'word': '第一句。', 'startTime': 0.1, 'endTime': 1}]}},
+        {'sentence': {'text': '第一句。第二句。', 'words': []}},
+        {'sentence': {'words': [{'word': '第二句。', 'startTime': 1.1, 'endTime': 2}]}},
+        {'sentence': {'words': [{'word': '第二句。', 'startTime': 1.1, 'endTime': 2}]}},
+        {'code': 20000000}]
+    class Response:
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+        def __iter__(self): return iter(json.dumps(e).encode() for e in events)
+    class Opener:
+        def open(self, request, timeout):
+            assert json.loads(request.data)['req_params']['audio_params']['enable_subtitle'] is True
+            return Response()
+    monkeypatch.setattr(urllib.request, 'build_opener', lambda *a: Opener())
+    monkeypatch.setattr(renderer, 'volc_api_key', lambda: 'test-only')
+    def convert(args):
+        with wave.open(args[-1], 'wb') as w:
+            w.setparams((1, 2, 24000, 0, 'NONE', 'not compressed'))
+            w.writeframes(b'\0\0' * 60000)
+    monkeypatch.setattr(renderer, 'run_ffmpeg', convert)
+    job = {'path': str(tmp_path / 'speech.wav'), 'text': '第一句。第二句。'}
+    renderer.volc_speech([job], tmp_path, 'zh_female_qinqienv_uranus_bigtts', rate=0)
+    words = json.loads((tmp_path / 'speech.words.json').read_text())
+    assert [w['text'] for w in words] == ['第一句。', '第二句。']
+    assert words[1]['offset'] == 11000000
+    assert (tmp_path / 'speech.volc-subtitles.json').exists()
+
+
+def test_semantic_cues_split_at_clause_boundary_preserve_model_and_all_text():
+    from dailyreport.render import semantic_subtitle_cues
+    text = 'GPT-6.1默认扩到50万，减少长任务压缩；最大仍保持100万。'
+    words = [{'text': c, 'offset': i * 1000000, 'duration': 1000000} for i,c in enumerate(text)]
+    bullets = ['GPT-6.1默认上下文提到50万。', '减少长任务的上下文压缩。', '最大上下文仍是100万。']
+    cues = semantic_subtitle_cues(text, words, 240, bullets)
+    assert ''.join(c['text'] for c in cues) == text
+    assert [c['focus_bullet'] for c in cues] == [0, 1, 2]
+    assert cues[0]['end_frame'] == round(text.index('减少') * 0.1 * 24)
+    assert cues[-1]['end_frame'] == 240
+
+
+def test_short_chat_clause_does_not_match_chatgpt_substring():
+    from dailyreport.render import semantic_focus
+    assert semantic_focus('只动 Chat。', ['ChatGPT推出GPT-6。', '先给部分回答。', '这次只针对Chat，Work没有变化。']) == 2

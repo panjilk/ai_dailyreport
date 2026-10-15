@@ -134,9 +134,9 @@ def main(argv=None):
     parser.add_argument('--limit', type=int, default=10, help='最多收录条数，默认10，允许5至12')
     parser.add_argument('--output', type=Path, help='输出目录，默认按运行时间新建')
     parser.add_argument('--collect-only', action='store_true', help='仅采集文字，不制作视频')
-    parser.add_argument('--tts', choices=['auto', 'edge', 'sapi'], default='auto')
+    parser.add_argument('--tts', choices=['auto', 'volc', 'edge', 'gtts', 'sapi'], default='auto')
     parser.add_argument('--voice', help='联网语音，默认温和的 zh-CN-XiaoxiaoNeural')
-    parser.add_argument('--rate', type=int, help='语速百分比，默认+10（约1.1倍）；支持-10至60')
+    parser.add_argument('--rate', type=int, help='语速百分比，默认取 config.speech_rate（0=默认语速）；支持-10至60')
     parser.add_argument('--pitch', type=int, help='音高调整，默认-8Hz；支持-20至20')
     parser.add_argument('--open', action='store_true', help='完成后打开本地预览页')
     args = parser.parse_args(argv)
@@ -189,7 +189,7 @@ def main(argv=None):
         export_text(briefing, output)
         if not args.collect_only:
             render(briefing, output, args.voice or config.get('voice', 'zh-CN-XiaoxiaoNeural'), args.tts,
-                   args.rate if args.rate is not None else config.get('speech_rate', 10),
+                   args.rate if args.rate is not None else config.get('speech_rate', 0),
                    pitch_hz=args.pitch if args.pitch is not None else config.get('speech_pitch_hz', -8),
                    warm=config.get('speech_warmth', True),
                    english_voice=config.get('english_voice', 'zh-CN-XiaoxiaoNeural'),

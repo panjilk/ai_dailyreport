@@ -60,6 +60,12 @@ def ocr_candidates(image_path, scratch):
             run_command(['ffmpeg', '-v', 'error', '-i', str(image_path), '-vf', filters, '-y', str(target)])
         text, _ = run_command(['tesseract', str(target), 'stdout', '-l', 'chi_sim+eng', *extra])
         texts.append(text)
+    # 隔离日期栏，避免整页版面分栏和标题粘连导致小字漏识别。
+    crop = scratch / f'{image_path.stem}-date.png'
+    run_command(['ffmpeg', '-v', 'error', '-i', str(image_path), '-vf',
+                 'crop=430:70:1380:205,scale=1290:210:flags=lanczos', '-y', str(crop)])
+    text, _ = run_command(['tesseract', str(crop), 'stdout', '-l', 'chi_sim+eng', '--psm', '7'])
+    texts.append(text)
     return texts
 
 
@@ -151,11 +157,15 @@ def verify(directory):
                 report(f'第 {index} 条画面日期', False, '找不到该条新闻的画面帧')
                 continue
             try:
-                # 同一新闻各帧有相同的事件日期栏；首张口播帧即可校验。
-                # 右上角日期是小字，单一缩放会读残，所以按多种缩放各 OCR 一次，任一命中即通过。
+                # 同一新闻各帧有相同的事件日期栏，但 OCR 会把「事件日期」标签与相邻文字粘连
+                # （实测首帧读成 …03/10-Claude5.5(+AHA2026-10-08…，第 2、3 帧在别的缩放下才读到），
+                # 所以每条取前 3 帧、每帧按多种缩放各 OCR 一次，任一命中即通过。
                 ok, reason = False, '画面缺少事件日期 ' + story['event_date']
-                for text in ocr_candidates(scene_frames[0], scratch):
-                    ok, reason = check_date_text(text, story['event_date'], story.get('bullets', []))
+                for frame in scene_frames[:3]:
+                    for text in ocr_candidates(frame, scratch):
+                        ok, reason = check_date_text(text, story['event_date'], story.get('bullets', []))
+                        if ok:
+                            break
                     if ok:
                         break
                 report(f'第 {index} 条画面日期', ok, reason)

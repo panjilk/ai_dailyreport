@@ -1,7 +1,7 @@
 {
   "voice": "zh-CN-XiaoxiaoNeural",
   "english_voice": "zh-CN-XiaoxiaoNeural",
-  "speech_rate": 10,
+  "speech_rate": 0,
   "speech_pitch_hz": -8,
   "speech_warmth": true,
   "scene_lead_in_seconds": 0.25,

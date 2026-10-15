@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 from array import array
 from copy import deepcopy
+from difflib import SequenceMatcher
 from datetime import date, timedelta, datetime
 from .recency import enforce_recency, news_date, SHANGHAI
 from functools import lru_cache
@@ -131,16 +132,35 @@ def wrap_text(text: str, face, width: int) -> list[str]:
     return lines
 
 
+_BREAK_AFTER = '、，,；;：:）)】》」”’！!？?。'
+_LATIN_TOKEN = r'[0-9A-Za-z]+(?:[.\-_/][0-9A-Za-z]+)*[^\w]*|[\w][^\w]*|[^\w]+'
+
+
+def _preferred_cut(part: str) -> int:
+    """在 part 末尾窗口里找更像自然停顿的切点（标点/空格之后），没有就返回 0。"""
+    for index in range(len(part) - 1, max(0, len(part) - 12) - 1, -1):
+        if part[index] in _BREAK_AFTER or part[index].isspace():
+            return index + 1
+    return 0
+
+
 def split_sentences(text: str, max_chars: int = 28) -> list[str]:
     if max_chars < 1:
         raise ValueError('max_chars must be positive')
     chunks, part = [], ''
     # Bind trailing punctuation to the spoken character before it. A period at
     # the line-length boundary must never become a separate silent TTS job.
-    tokens = re.findall(r'\w[^\w]*|[^\w]+', text, flags=re.UNICODE)
+    # 连续的 ASCII 字母/数字，连同内部的 . - _ /（如 GPT-6.1、3.6、mimo-v2.5-pro、
+    # gemini-3.7-flash）算作同一个 token，避免把型号名或版本号切断；
+    # CJK 仍逐字切，中文标点仍跟随前字。
+    tokens = re.findall(_LATIN_TOKEN, text, flags=re.UNICODE)
     for token in tokens:
         if part and len(part + token) > max_chars:
-            chunks.append(part); part = ''
+            cut = _preferred_cut(part)
+            if cut:
+                chunks.append(part[:cut]); part = part[cut:]
+            else:
+                chunks.append(part); part = ''
         part += token
         if re.search(r'[。！？；]', token):
             chunks.append(part); part = ''
@@ -284,7 +304,7 @@ def prepare_video_briefing(briefing):
             else:
                 bullets = []
             if not bullets:
-                raise ValueError('请为这条新闻填写约40至60字的 video_title 和 video_bullets：' + story['title'])
+                raise ValueError('请为这条新闻填写约85字的 video_title 和 video_bullets：' + story['title'])
         if not isinstance(bullets, list) or not bullets or not all(isinstance(x, str) and x.strip() for x in bullets):
             raise ValueError('video_bullets 必须是非空文字数组：' + story['title'])
         story['video_narration'] = ''.join(bullets)
@@ -292,8 +312,9 @@ def prepare_video_briefing(briefing):
         if (re.search(r'https?://|来源|据.{0,20}(?:报道|消息)', story['video_narration']) or
                 (not source_is_subject and story['source_name'] in story['video_narration'])):
             raise ValueError('视频短稿仍包含新闻来源，请编辑 video_bullets：' + story['title'])
-        if len(story['video_narration']) > 100:
-            raise ValueError('视频短稿过长，请精简到约40至60字：' + story['title'])
+        # 85 个汉字连同标点约 105-110 字符，上限留到 140（约 105 汉字）避免误拒。
+        if len(story['video_narration']) > 140:
+            raise ValueError('视频短稿过长，请精简到约85字：' + story['title'])
     return result
 
 
@@ -498,6 +519,54 @@ def verify_word_coverage(text, words, duration, min_preroll=0):
         raise ValueError('音频在最后一个词结束前截断。')
 
 
+def volc_word_boundaries(text, raw_words):
+    """Convert Volcengine global-second words to the renderer's 100ns format."""
+    words, seen = [], set()
+    for raw in raw_words:
+        word = str(raw.get('word', ''))
+        if not word or raw.get('startTime') is None or raw.get('endTime') is None:
+            continue
+        start = round(float(raw['startTime']) * 10_000_000)
+        end = round(float(raw['endTime']) * 10_000_000)
+        identity = (word, start, end)
+        if identity in seen:
+            continue
+        seen.add(identity)
+        if end < start:
+            raise ValueError('火山返回了逆序字幕时间戳。')
+        if words and start < words[-1]['offset']:
+            raise ValueError('火山返回了逆序字幕时间戳。')
+        words.append({'text': word, 'offset': start, 'duration': end - start})
+    if lexical_text(''.join(word['text'] for word in words)) != lexical_text(text):
+        raise ValueError('字幕文字无法与火山返回词序列对齐，停止交付以防错位。')
+    return words
+
+
+def semantic_focus(cue_text, bullets, narration=''):
+    """Choose the displayed bullet by lexical overlap, not subtitle index."""
+    cue = lexical_text(cue_text)
+    if not cue or not bullets:
+        return None
+    scores = []
+    latin_terms = re.findall(r'[a-z0-9]+', cue)
+    for index, bullet in enumerate(bullets):
+        candidate = lexical_text(bullet)
+        blocks = SequenceMatcher(None, cue, candidate, autojunk=False).get_matching_blocks()
+        overlap = sum(block.size ** 2 for block in blocks if block.size >= 2)
+        contiguous = max((block.size for block in blocks), default=0)
+        exact_terms = sum(len(term) ** 2 for term in latin_terms
+                          if re.search(r'(?<![a-z0-9])' + re.escape(term) + r'(?![a-z0-9])', bullet.casefold()))
+        # A very short Latin token (e.g. Chat) is not useful alone; require
+        # neighboring Chinese evidence so ChatGPT does not win over a semantic match.
+        if exact_terms and len(latin_terms) == 1 and len(latin_terms[0]) <= 4:
+            exact_terms += sum(1 for char in cue if '\u4e00' <= char <= '\u9fff' and char in candidate)
+        scores.append((overlap + exact_terms, contiguous, -index))
+    best = max(range(len(scores)), key=lambda i: scores[i])
+    if scores[best][0] == 0 and scores[best][1] == 0:
+        return None
+    return best
+
+
 def remove_tts_cue(words, cue=TTS_CUE, preroll_seconds=TTS_PREROLL_SECONDS):
     """Remove an audible synthesis cue while retaining safe audio before the real first word."""
     cue_text = lexical_text(cue)
@@ -517,9 +586,22 @@ def remove_tts_cue(words, cue=TTS_CUE, preroll_seconds=TTS_PREROLL_SECONDS):
     return content_words, trim_seconds
 
 
-def subtitle_cues(text, words, total_frames):
+def semantic_subtitle_cues(text, words, total_frames, bullets):
+    clauses = re.findall(r'[^，,；;：:。！？!?]+[，,；;：:。！？!?]*|[，,；;：:。！？!?]+', text)
+    chunks, focuses = [], []
+    for clause in clauses:
+        focus = semantic_focus(clause, bullets, text)
+        for chunk in split_sentences(clause, 32):
+            chunks.append(chunk)
+            focuses.append(focus)
+    return subtitle_cues(text, words, total_frames, chunks=chunks, focuses=focuses)
+
+
+def subtitle_cues(text, words, total_frames, *, chunks=None, focuses=None):
     """Subtitle division never drives speech requests; timing comes from audio."""
-    chunks = split_sentences(text, 32)
+    chunks = chunks if chunks is not None else split_sentences(text, 32)
+    if words and lexical_text(''.join(word['text'] for word in words)) != lexical_text(text):
+        raise ValueError('字幕文字无法与返回词序列对齐。')
     def frame_at(character):
         if words:
             count = 0
@@ -536,6 +618,8 @@ def subtitle_cues(text, words, total_frames):
         end = total_frames if i == len(chunks) - 1 else frame_at(character)
         end = min(total_frames - (len(chunks) - i - 1), max(previous + 1, end))
         result.append({'start_frame': previous, 'end_frame': end, 'text': chunk})
+        if focuses is not None:
+            result[-1]['focus_bullet'] = focuses[i]
         previous = end
     return result
 
@@ -618,9 +702,135 @@ async def edge_speech(jobs, voice, rate=20, pitch_hz=0, warm=False,
     await asyncio.gather(*(one(job) for job in jobs[1:]))
 
 
+def gtts_speech(jobs, directory, voice, rate=20, pitch_hz=0, warm=False,
+                 english_voice='zh-CN-XiaoxiaoNeural'):
+    """Linux 兜底配音：Google TTS。无词级边界，字幕按时间轴均分（等同 SAPI 路径）。"""
+    from gtts import gTTS
+    for job in jobs:
+        target = Path(job['path'])
+        mp3 = target.with_suffix('.mp3')
+        spoken_text = tts_pronunciation_text(job['text'])
+        job['tts_text'] = spoken_text
+        gTTS(spoken_text, lang='zh-CN').save(str(mp3))     # requests 会读 ALL_PROXY/HTTPS_PROXY
+        filters = ['asetpts=PTS-STARTPTS']
+        if warm:
+            filters += ['highpass=f=62',
+                        'equalizer=f=170:t=q:w=1:g=1.7',
+                        'equalizer=f=4900:t=q:w=1:g=-1.4',
+                        'acompressor=threshold=0.11:ratio=1.6:attack=30:release=210:makeup=1.12',
+                        'loudnorm=I=-17:TP=-1.5:LRA=7']
+        run_ffmpeg(['-i', str(mp3), '-ar', '24000', '-ac', '1', '-af', ','.join(filters),
+                    '-c:a', 'pcm_s16le', str(target)])
+        target.with_suffix('.words.json').unlink(missing_ok=True)   # 无边界 → 跳过 Edge 校验
+        job['tts_preroll_seconds'] = 0
+    return 'Google TTS (fallback) / zh-CN'
+
+
+VOLC_DEFAULT_SPEAKER = 'zh_female_xiaohe_uranus_bigtts'
+
+
+def volc_api_key():
+    """火山豆包 TTS 凭据：环境变量优先，其次 ~/.config/ai_dailyreport/volc_tts_key。"""
+    key = os.environ.get('VOLC_TTS_KEY')
+    if key and key.strip():
+        return key.strip()
+    path = Path.home() / '.config' / 'ai_dailyreport' / 'volc_tts_key'
+    if path.exists():
+        return path.read_text(encoding='utf-8').strip()
+    return ''
+
+
+def volc_speech(jobs, directory, voice, rate=20, pitch_hz=0, warm=False,
+                english_voice='zh-CN-XiaoxiaoNeural'):
+    """火山引擎豆包语音合成大模型 2.0，并保留词级字幕边界。"""
+    import base64
+    import urllib.request
+    import uuid as _uuid
+    key = volc_api_key()
+    if not key:
+        raise RuntimeError('缺少火山豆包 TTS 凭据：设 VOLC_TTS_KEY 或写 ~/.config/ai_dailyreport/volc_tts_key。')
+    speaker = voice if str(voice).startswith(('zh_', 'en_', 'ICL_', 'S_')) else VOLC_DEFAULT_SPEAKER
+    url = 'https://openspeech.bytedance.com/api/v3/tts/unidirectional'
+    # 火山是国内服务：显式绕开 ALL_PROXY/HTTPS_PROXY，直连更稳。
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    for job in jobs:
+        target = Path(job['path'])
+        mp3 = target.with_suffix('.mp3')
+        spoken_text = tts_pronunciation_text(job['text'])
+        job['tts_text'] = spoken_text
+        body = json.dumps({
+            'user': {'uid': 'ai_dailyreport'},
+            'req_params': {'text': spoken_text, 'speaker': speaker,
+                           'audio_params': {'format': 'mp3', 'sample_rate': 24000,
+                                            'enable_subtitle': True,
+                                            'speech_rate': int(rate)}},
+        }, ensure_ascii=False).encode()
+        request = urllib.request.Request(url, data=body, headers={
+            'Content-Type': 'application/json', 'X-Api-Key': key,
+            'X-Api-Resource-Id': 'seed-tts-2.0', 'X-Api-Request-Id': str(_uuid.uuid4())})
+        raw = b''
+        raw_words = []
+        subtitle_events = []
+        with opener.open(request, timeout=180) as response:
+            for line in response:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line.decode('utf-8', 'replace'))
+                except Exception:
+                    continue
+                payload = event.get('data')
+                if payload:
+                    try:
+                        raw += base64.b64decode(payload)
+                    except Exception:
+                        try:
+                            raw += bytes.fromhex(payload)
+                        except Exception:
+                            pass
+                code = event.get('code')
+                if event.get('sentence') is not None:
+                    subtitle_events.append(event['sentence'])
+                sentence_words = (event.get('sentence') or {}).get('words') or []
+                if sentence_words:
+                    raw_words.extend(sentence_words)
+                if code not in (None, 0, 20000000, 20000001, 20000002, 20000003):
+                    raise RuntimeError(f'火山 TTS 报错 code={code} message={event.get("message")}')
+        if not raw:
+            raise RuntimeError('火山 TTS 没有返回音频数据。')
+        mp3.write_bytes(raw)
+        filters = ['asetpts=PTS-STARTPTS']
+        if warm:
+            filters += ['highpass=f=62',
+                        'equalizer=f=170:t=q:w=1:g=1.7',
+                        'equalizer=f=4900:t=q:w=1:g=-1.4',
+                        'acompressor=threshold=0.11:ratio=1.6:attack=30:release=210:makeup=1.12',
+                        'loudnorm=I=-17:TP=-1.5:LRA=7']
+        run_ffmpeg(['-i', str(mp3), '-ar', '24000', '-ac', '1', '-af', ','.join(filters),
+                    '-c:a', 'pcm_s16le', str(target)])
+        words = volc_word_boundaries(spoken_text, raw_words)
+        target.with_suffix('.volc-subtitles.json').write_text(
+            json.dumps({'text': spoken_text, 'sentences': subtitle_events}, ensure_ascii=False, indent=2), encoding='utf-8')
+        with wave.open(str(target)) as reader:
+            verify_word_coverage(spoken_text, words, reader.getnframes() / reader.getframerate())
+        target.with_suffix('.words.json').write_text(json.dumps(words, ensure_ascii=False), encoding='utf-8')
+        job['tts_preroll_seconds'] = 0
+    return f'Volcengine 豆包 TTS / {speaker}'
+
+
 def synthesize(jobs, directory, voice, engine, rate=20, pitch_hz=0, warm=False,
                english_voice='zh-CN-XiaoxiaoNeural'):
+    if engine == 'volc':
+        return volc_speech(jobs, directory, voice, rate, pitch_hz, warm, english_voice)
+    if engine == 'gtts':
+        return gtts_speech(jobs, directory, voice, rate, pitch_hz, warm, english_voice)
     if engine in ('auto', 'edge'):
+        if engine == 'auto' and volc_api_key():
+            try:
+                return volc_speech(jobs, directory, voice, rate, pitch_hz, warm, english_voice)
+            except Exception as volc_exc:
+                print(f'火山豆包配音不可用（{type(volc_exc).__name__}: {volc_exc}），改用 Microsoft Edge 语音。', flush=True)
         try:
             asyncio.run(edge_speech(jobs, voice, rate, pitch_hz, warm, english_voice))
             tone = ' / warm' if warm else ''
@@ -629,8 +839,12 @@ def synthesize(jobs, directory, voice, engine, rate=20, pitch_hz=0, warm=False,
             return f'Edge TTS / {voice} / {rate:+d}% / {pitch_hz:+d}Hz{tone}{bilingual}'
         except Exception as exc:
             if engine == 'edge':
-                raise RuntimeError(f'联网中文配音失败（{type(exc).__name__}: {exc}）。可使用 --tts sapi 选择 Windows 本地语音。') from exc
-            print(f'联网配音不可用（{type(exc).__name__}），正在使用 Windows 中文语音。', flush=True)
+                raise RuntimeError(f'联网中文配音失败（{type(exc).__name__}: {exc}）。可使用 --tts gtts 或 --tts sapi 选择本地/兜底语音。') from exc
+            print(f'Edge 配音不可用（{type(exc).__name__}），改用 Google TTS 兜底。', flush=True)
+            try:
+                return gtts_speech(jobs, directory, voice, rate, pitch_hz, warm, english_voice)
+            except Exception as fallback_exc:
+                print(f'Google TTS 兜底也失败（{type(fallback_exc).__name__}），尝试 Windows 中文语音。', flush=True)
     if os.name != 'nt':
         raise RuntimeError('Windows 本地配音仅支持 Windows；请恢复联网语音连接。')
     manifest = directory / 'speech-jobs.json'
@@ -683,7 +897,7 @@ def build_scene_plan(briefing):
     return scenes
 
 
-def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='auto', rate=10,
+def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='auto', rate=0,
            *, pitch_hz=-8, warm=True, english_voice='zh-CN-XiaoxiaoNeural',
            scene_lead_in_seconds=0.25, background_music_volume=0.42,
            transition_click_volume=0.32, search_time=None) -> Path:
@@ -742,7 +956,7 @@ def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='a
             audio_duration = samples / 24000
             word_file = Path(job['path']).with_suffix('.words.json')
             words = json.loads(word_file.read_text('utf-8')) if word_file.exists() else []
-            if engine_used.startswith('Edge'):
+            if engine_used.startswith(('Edge', 'Volcengine')):
                 verify_word_coverage(job['text'], words, audio_duration)
             # Show each new page before speech begins so players and Bluetooth
             # devices cannot mask the first syllable during the visual change.
@@ -769,7 +983,9 @@ def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='a
             unit_frames = target_samples // 1000
             writer.writeframes(b'\0' * (lead_samples * 2) + frames +
                                b'\0' * ((target_samples - samples) * 2))
-            cues = subtitle_cues(job['text'], words, unit_frames)
+            scene = scenes[job['scene']]
+            cues = (semantic_subtitle_cues(job['text'], words, unit_frames, scene['bullets'])
+                    if scene['bullets'] else subtitle_cues(job['text'], words, unit_frames))
             if ''.join(c['text'] for c in cues) != job['text']:
                 raise ValueError('字幕没有完整覆盖口播。')
             for cue_index, cue in enumerate(cues):
@@ -782,7 +998,7 @@ def render(briefing: dict, output: Path, voice='zh-CN-XiaoxiaoNeural', engine='a
                 focus = None
                 image = scene['image']
                 if scene['bullets']:
-                    focus = round(cue_index * (len(scene['bullets']) - 1) / max(1, len(cues) - 1))
+                    focus = cue.get('focus_bullet')
                     image = story_image(briefing, briefing['stories'][job['chapter'] - 1],
                                         job['chapter'], scene['bullets'], scene['page'],
                                         scene['page_count'], active_bullet=focus)

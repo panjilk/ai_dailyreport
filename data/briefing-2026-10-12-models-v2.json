@@ -1,0 +1,241 @@
+{
+  "date": "2026-10-12",
+  "window_days": 5,
+  "edition_start_date": "2026-09-21",
+  "title": "AI 日报 · 2026-10-12（模型精选版）",
+  "edition_note": "本期 10 条覆盖 10 月 8 日至 10 月 12 日的具名大模型变化：OpenAI 把 GPT-6.1 Sol 的默认上下文提到 50 万 token 并推送 Ultrafast 与 GPT-6 新界面，Anthropic 发布 Claude Haiku 5.5，通义千问开出 Qwen-Image-2.1-Turbo 与 QwenGyre，另有小米 MiMo 与 Gemini API 的迁移期限。",
+  "summary_parked": [],
+  "excluded_stories": [],
+  "search_date": "2026-10-12",
+  "window_hours": 120,
+  "window_start": "2026-10-08T00:00:00+08:00",
+  "window_end": "2026-10-12T19:40:00+08:00",
+  "recency_policy": "bounded_hours",
+  "source_format": "hermes_editorial",
+  "stories": [
+    {
+      "title": "GPT-6.1 Sol 默认上下文扩到 50 万 token",
+      "category": "模型发布",
+      "nav_label": "GPT-6.1 Sol",
+      "source_name": "Tibo（OpenAI）",
+      "source_url": "https://x.com/thsottiaux/status/2109430343346581527",
+      "published": "2026-10-12T07:45:00+08:00",
+      "event_date": "2026-10-12",
+      "event_date_evidence": "Tibo 2026-10-11 23:45 UTC（北京 10-12 07:45）原帖：默认上下文从 272k 提到 500k",
+      "verification": "vendor_official_post",
+      "bullets": [
+        "OpenAI 的 Tibo 在 10 月 12 日说，GPT-6.1 Sol 在 Codex 和 ChatGPT Work 里的默认上下文，从 27.2 万提高到 50 万 token。",
+        "他解释这样可以减少长任务中的上下文压缩，让任务细节保留得更多；这次改的是默认配置，不是模型最大上限。",
+        "用户仍可自行调整，最大上下文还是 100 万 token；默认值变了，模型本身并没有换版本。"
+      ],
+      "video_bullets": [
+        "GPT-6.1 Sol 在 Codex 和 ChatGPT Work 的默认上下文提到 50 万 token，长任务更少被压缩，模型上限仍是 100 万。"
+      ]
+    },
+    {
+      "title": "ChatGPT 推送 GPT-6 与可交互回答界面",
+      "category": "模型发布",
+      "nav_label": "GPT-6",
+      "source_name": "OpenAI 发布帖",
+      "source_url": "https://x.com/OpenAI/status/2107894997538525580",
+      "published": "2026-10-08T02:05:00+08:00",
+      "event_date": "2026-10-08",
+      "event_date_evidence": "OpenAI 发布帖换算北京时间为 10-08 02:05（官网更新说明标注 10-07）",
+      "verification": "vendor_official_post",
+      "bullets": [
+        "OpenAI 在 10 月 8 日开始面向 ChatGPT 付费计划推送 GPT-6 和 Intelligent UI，回答不再只是一段文字。",
+        "新回答可以组合对比图、示意图和计算器等可操作内容，模型继续思考或调用工具时也能先给出部分回答。",
+        "Free 和 Go 计划随后扩展，企业账号受管理员设置影响；这次只针对 Chat，Work 和 Codex 里的模型没有变化。"
+      ],
+      "video_bullets": [
+        "ChatGPT 开始给付费用户推送 GPT-6 和可交互界面，回答里能放对比图、示意图和计算器，免费计划稍后跟上。"
+      ],
+      "supporting_sources": [
+        {
+          "name": "ChatGPT 官方更新说明",
+          "url": "https://help.openai.com/en/articles/6825453-chatgpt-release-notes"
+        }
+      ]
+    },
+    {
+      "title": "Claude Haiku 5.5 发布，主打高频低成本",
+      "category": "模型发布",
+      "nav_label": "Claude 5.5",
+      "source_name": "Anthropic",
+      "source_url": "https://x.com/AnthropicAI/status/2107894039626277339",
+      "published": "2026-10-08T02:01:00+08:00",
+      "event_date": "2026-10-08",
+      "event_date_evidence": "Anthropic 发布帖换算北京时间为 10-08 02:01（官网模型页标注 10-07）",
+      "verification": "vendor_official_post",
+      "bullets": [
+        "Anthropic 发布 Claude Haiku 5.5，面向摘要、分类、数据库查询和编程子智能体这类高频任务。",
+        "官方估算平均运行成本比 Haiku 4.5 低约 75%，但不是统一降价：提示词不超过 10 万 token 时，每百万输入 0.1 美元、输出 0.5 美元，超过则涨到 0.5 和 2.5 美元。",
+        "Haiku 系列首次加入可调节的思考投入设置；同批更新还把 Sonnet 5.5 的缓存读取价格减半。"
+      ],
+      "video_bullets": [
+        "Claude Haiku 5.5 发布，主打摘要、分类这类高频任务，平均成本比上代低约 75%，并首次加入可调节的思考投入。"
+      ],
+      "supporting_sources": [
+        {
+          "name": "Anthropic 模型公告与价格表",
+          "url": "https://www.anthropic.com/claude-haiku-5-5"
+        }
+      ]
+    },
+    {
+      "title": "Qwen 图像模型推出 Turbo 版，八步去噪出图",
+      "category": "模型发布",
+      "nav_label": "Qwen-Image",
+      "source_name": "Qwen",
+      "source_url": "https://x.com/Alibaba_Qwen/status/2108549075218120949",
+      "published": "2026-10-09T21:24:00+08:00",
+      "event_date": "2026-10-09",
+      "event_date_evidence": "Qwen 发布帖 2026-10-09 21:24（北京时间）",
+      "verification": "vendor_official_post",
+      "bullets": [
+        "通义千问发布 Qwen-Image-2.1-Turbo，沿用 2.1 版本的 70 亿参数视觉生成架构，把生成和编辑图片的推荐流程压缩成八步去噪。",
+        "模型支持 2K 图像生成，也能用自然语言继续修改画面；权重已经开放，可以用 Diffusers 的 QwenImage21Pipeline 加载。",
+        "官方同时开放 Pro 和 Turbo 接口；开放权重采用 Qwen Research 许可，不是 Apache 或 MIT 许可。"
+      ],
+      "video_bullets": [
+        "通义千问发布 Qwen-Image-2.1-Turbo，沿用 70 亿参数架构，把生成和编辑图片压缩到八步去噪，支持 2K 出图和自然语言改图。"
+      ],
+      "supporting_sources": [
+        {
+          "name": "官方模型卡",
+          "url": "https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo"
+        }
+      ]
+    },
+    {
+      "title": "GPT-6.1 Sol 新增 Ultrafast 输出模式",
+      "category": "模型发布",
+      "nav_label": "Sol Ultrafast",
+      "source_name": "OpenAI Developers",
+      "source_url": "https://x.com/OpenAIDevs/status/2108262812489531498",
+      "published": "2026-10-09T02:26:00+08:00",
+      "event_date": "2026-10-09",
+      "event_date_evidence": "OpenAI Developers 发布帖 2026-10-09 02:26 至 03:15（北京时间）",
+      "verification": "vendor_official_post",
+      "bullets": [
+        "OpenAI 开始在 API、Codex 和 ChatGPT Work 推送 Sol Ultrafast，输出速度最高可达 Sol Standard 的八倍。",
+        "官方强调这是输出速度，不等于每个完整任务都变快八倍；应用端目前只面向 Pro 500 和符合条件的 Enterprise、Edu 计划。",
+        "同批公布的还有更即时的任务方向调整能力，让模型更快响应用户在执行途中修改的指令。"
+      ],
+      "video_bullets": [
+        "OpenAI 推送 Sol Ultrafast，输出速度最高是标准版的八倍，但目前只给 Pro 500 等少数计划，完整任务不会整体快八倍。"
+      ],
+      "supporting_sources": [
+        {
+          "name": "Tibo 功能说明",
+          "url": "https://x.com/thsottiaux/status/2108275041276420573"
+        },
+        {
+          "name": "官方可用范围",
+          "url": "https://learn.chatgpt.com/docs/whats-new"
+        }
+      ]
+    },
+    {
+      "title": "阿里千问发布 QwenGyre 智能体训练框架",
+      "category": "模型发布",
+      "nav_label": "Qwen",
+      "source_name": "IT之家",
+      "source_url": "https://www.ithome.com/1/012/066.htm",
+      "published": "2026-10-12T11:20:43+08:00",
+      "event_date": "2026-10-12",
+      "event_date_evidence": "IT之家 2026-10-12 11:20 报道：阿里千问于 10 月 12 日正式发布 QwenGyre",
+      "verification": "media_report_of_vendor_release",
+      "bullets": [
+        "阿里千问 10 月 12 日发布 QwenGyre，面向长程智能体任务做在线强化学习，超时但部分完成的任务也能拿到反馈。",
+        "官方用 Partial Scoring 给不完整轨迹打分，避免一次超时就把整段训练信号丢掉。",
+        "在 NL2RepoBench 的在线强化学习实验中，以每次 rollout 约 70 万 token 训练，48 步后通过率从 52.5% 提升到 58.5%。"
+      ],
+      "video_bullets": [
+        "阿里千问推出 QwenGyre 长程智能体训练框架，超时但部分完成的任务也能拿到反馈，训练 48 步把代码通过率提到 58.5%。"
+      ]
+    },
+    {
+      "title": "小米 MiMo 旧模型 10 月 21 日名称失效",
+      "category": "模型发布",
+      "nav_label": "MiMo 2.5",
+      "source_name": "小米 MiMo 官方文档",
+      "source_url": "https://mimo.mi.com/docs/zh-CN/updates/deprecate",
+      "published": "2026-10-09T00:00:00+08:00",
+      "event_date": "2026-10-09",
+      "event_date_evidence": "官方文档更新时间 2026-10-09；生效时间 10-14 18:00 与 10-21 10:00（北京时间）",
+      "verification": "vendor_documentation",
+      "bullets": [
+        "小米更新 MiMo 旧模型下线安排：北京时间 10 月 14 日 18:00 起，mimo-v2.5-pro 和 mimo-v2.5 的请求分别自动转到 mimo-v2.6-pro 和 mimo-v2.6-flash，并按新模型计价。",
+        "10 月 21 日 10:00 起旧模型名称失效，继续调用会直接报错。",
+        "自动转到 Flash 时，如果请求没指定最大完成 token 数，默认值会从 32768 变成 131072；这些期限都还没到，正在用旧型号的开发者要提前改配置并验证输出和费用。"
+      ],
+      "video_bullets": [
+        "小米把 MiMo 旧模型的迁移期限定在 10 月 14 日和 21 日，到期后旧名字就报错，自动转到新模型后计费和默认输出长度都会变。"
+      ]
+    },
+    {
+      "title": "Gemini API 换旧 Flash，旧版深度研究将停用",
+      "category": "开发生态",
+      "nav_label": "Gemini API",
+      "source_name": "Gemini API 更新日志",
+      "source_url": "https://ai.google.dev/gemini-api/docs/changelog",
+      "published": "2026-10-08T00:00:00+08:00",
+      "event_date": "2026-10-08",
+      "event_date_evidence": "官方更新日志日期 2026-10-08；停用期限 10 月 23 日",
+      "verification": "vendor_documentation",
+      "bullets": [
+        "Gemini API 更新说明显示，gemini-3.7-flash 的请求已经自动转到 3.8 Flash，3.5 Flash 的请求转到 3.6 Flash，开发者需要更新模型名称并回归测试。",
+        "这是旧型号的替换，不是当天新发布这两个模型。",
+        "另一个期限是 10 月 23 日：旧版深度研究智能体 deep-research-pro-preview-12-2025 停用，需要迁移到 2026 年 4 月的 Deep Research 或 Max 版本。"
+      ],
+      "video_bullets": [
+        "Gemini API 把旧 Flash 型号的请求自动转到更新版本，10 月 23 日还会停用旧版深度研究智能体，开发者要提前换名字。"
+      ]
+    },
+    {
+      "title": "谷歌云推企业智能体，串起邮件与业务系统",
+      "category": "产品应用",
+      "nav_label": "Gemini 智能体",
+      "source_name": "Google Cloud 官方公告",
+      "source_url": "https://cloud.google.com/blog/products/ai-machine-learning/welcome-to-gemini-at-work-2026/",
+      "published": "2026-10-08T00:00:00+08:00",
+      "event_date": "2026-10-08",
+      "event_date_evidence": "Google Cloud 官方公告日期 2026-10-08（未标注具体时刻）",
+      "verification": "vendor_official_announcement",
+      "bullets": [
+        "Google Cloud 宣布面向企业工作的 Gemini 智能体，可以连接邮件、文档和业务系统，规划任务并调用工具和子智能体。",
+        "它的云端持续执行设计允许长任务在电脑关闭后继续跑，并在不同设备之间保留上下文。",
+        "企业可以设置权限、审计和费用上限；金融与法律行业版本还在预览。"
+      ],
+      "video_bullets": [
+        "Google Cloud 推出企业版 Gemini 智能体，能连接邮件、文档和业务系统并调用子智能体干活，企业可以限制权限和费用。"
+      ]
+    },
+    {
+      "title": "Tibo 就 Pro 额度发起投票，多数选择不变",
+      "category": "产品应用",
+      "nav_label": "Tibo 投票",
+      "source_name": "Tibo（OpenAI）",
+      "source_url": "https://x.com/thsottiaux/status/2109152716954222849",
+      "published": "2026-10-11T13:22:00+08:00",
+      "event_date": "2026-10-11",
+      "event_date_evidence": "投票 2026-10-11 13:22 发起，10-12 08:21 作出结果回应（北京时间）",
+      "verification": "vendor_social_poll_not_a_decision",
+      "bullets": [
+        "OpenAI 的 Tibo 在 10 月 11 日发起投票，问 Pro 用户更愿意拿两倍周额度，还是保持现在不设五小时限制。",
+        "投票结束后保留现状的选项得票更多，他说这和自己原本的预期不同。",
+        "这里说的是意见征询和后续回应，不是已公布的套餐变更：周额度没有正式翻倍，五小时限制也没有宣布恢复。"
+      ],
+      "video_bullets": [
+        "OpenAI 的 Tibo 问 Pro 用户愿不愿意用五小时限制换两倍周额度，投票结果是保留现状的人更多；这只是征询意见，套餐没有变。"
+      ],
+      "supporting_sources": [
+        {
+          "name": "Tibo 结果回应",
+          "url": "https://x.com/thsottiaux/status/2109439315570999598"
+        }
+      ]
+    }
+  ]
+}
